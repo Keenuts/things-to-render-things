@@ -16,5 +16,8 @@ namespace pathtracer
     } render_info_t;
 
     void render_scene(scene_t *scene);
-    void render_sphere(render_info_t *output, object_t *object, ray_t ray);
+    vec3_t render_pixel(scene_t *scene, ray_t ray, uint32_t bounce = 0);
+
+    vec3_t render_object(scene_t *scene, object_sphere_t *o, ray_t r,
+                         double *depth, uint32_t bounce);
 }

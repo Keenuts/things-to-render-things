@@ -18,6 +18,10 @@ namespace pathtracer
         vec3_t color;
     } object_t;
 
+    typedef struct object_sphere : public object_t {
+        float radius;
+    } object_sphere_t;
+
     typedef struct scene {
         uint32_t width;
         uint32_t height;
