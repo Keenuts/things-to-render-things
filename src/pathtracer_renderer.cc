@@ -27,7 +27,7 @@ namespace pathtracer
         double s_height = lerp(-height, height, y / height) / 2.0;
 
         vec3_t screen_ptr = VECTOR_RIGHT * s_width
-                      + VECTOR_UP * s_height
+                      - VECTOR_UP * s_height
                       + middle;
 
         vec3_t direction = screen_ptr - scene->camera_position;
@@ -50,16 +50,21 @@ namespace pathtracer
         
         for (uint32_t y = 0; y < info.height; y++) {
             for (uint32_t x = 0; x < info.width; x++) {
+
                 ray_t r = create_ray_from_px(x, y, scene);
 
                 vec3_t color = render_pixel(scene, r);
 
-                info.output_frame[(info.width * y + x) * STRIDE + 0] = color.r;
-                info.output_frame[(info.width * y + x) * STRIDE + 1] = color.g;
-                info.output_frame[(info.width * y + x) * STRIDE + 2] = color.b;
+                info.output_frame[(info.width * y + x) * STRIDE + 0] = color.r * 255.0;
+                info.output_frame[(info.width * y + x) * STRIDE + 1] = color.g * 255.0;
+                info.output_frame[(info.width * y + x) * STRIDE + 2] = color.b * 255.0;
                 info.output_frame[(info.width * y + x) * STRIDE + 3] = 255;
             }
+
+            float percent = y / (float)(info.height);
+            printf("\rprogress: %.2f%%    ", percent * 100.0f);
         }
+        printf("\rprogress: 100%%    \n");
 
         printf("[ OK ] Rendering done.\n");
 
@@ -74,44 +79,91 @@ namespace pathtracer
     vec3_t render_pixel(scene_t *scene, ray_t ray, uint32_t bounce)
     {
         double depth = std::numeric_limits<double>::infinity();
-        vec3_t px(0, 0, 0);
+        vec3_t color(0, 0, 0);
+        vec3_t light = normalize(vec3_t(0.3, -1.0, 0.2));
 
         for (object_t *o : scene->objects) {
-            double c_depth;
-            vec3_t c_px;
+            hit_t hit;
+            bool touch;
 
-            if (o->type == object_type_e::SPHERE)
-                c_px = render_object(scene,static_cast<object_sphere_t*>(o),
-                    ray, &c_depth, bounce);
-            else
-                assert(0);
+            switch (o->type) {
+                case object_type_e::SPHERE:
+                    touch = intersect_object(scene, (object_sphere_t*)o, ray, &hit);
+                    break;
+                case object_type_e::PLANE:
+                    touch = intersect_object(scene, (object_plane_t*)o, ray, &hit);
+                    break;
+                case object_type_e::MESH:
+                    touch = intersect_object(scene, (object_mesh_t*)o, ray, &hit);
+                    break;
+                default:
+                    assert(0 && "Object type unknown.");
+            };
 
-            if (c_depth < depth) {
-                px = c_px;
-                depth = c_depth;
+            if (!touch)
+                continue;
+
+            double tmp_depth = magnitude(hit.position - ray.origin);
+
+            if (tmp_depth < depth) {
+                color = std::max(0.2, dot(hit.normal, -light)) * o->color;
+
+                if (bounce < 2) {
+                    ray_t refl_ray;
+
+                    refl_ray.origin = hit.position + hit.normal * 0.1;
+                    refl_ray.direction = reflect(ray.direction, hit.normal);
+
+                    vec3_t color_b = render_pixel(scene, refl_ray, bounce + 1);
+                    color = saturate(color_b * 0.4 + color * 0.6);
+                }
+                depth = tmp_depth;
             }
         }
 
-        return px;
+        return color;
     }
 
-    vec3_t render_object(scene_t *scene, object_sphere_t *o, ray_t r,
-                         double *depth, uint32_t bounce)
+    bool intersect_object(scene_t *scene, object_sphere_t *o, ray_t r, hit_t *out)
     {
-        vec3_t intersection;
+        return intersect_sphere(r, o->position, o->radius, out);
+    }
 
-        if (intersect_sphere(r, o->position, o->radius, &intersection)) {
-            *depth = magnitude(intersection - r.origin);
+    bool intersect_object(scene_t *scene, object_plane_t *o, ray_t r, hit_t *out)
+    {
+        vec3_t a = o->a + o->position;
+        vec3_t b = o->b + o->position;
+        vec3_t c = o->c + o->position;
+        return intersect_plane(r, a, b, c, out);
+    }
 
-            vec3_t normal = normalize(intersection - o->position);
-            vec3_t light = normalize(vec3_t(-0.2, -1, -0.2));
-            vec3_t color = std::max(0.1, dot(normal, light)) * o->color;
-            return color;
+    bool intersect_object(scene_t *scene, object_mesh_t *o, ray_t r, hit_t *out)
+    {
+        hit_t hit;
+        bool touch = false;
+        double depth = std::numeric_limits<double>::infinity();
+
+        assert(o->vtx_count % 3 == 0 && "Invalid vtx count. Must be multiple of 3");
+
+        for (uint64_t i = 0; i < o->vtx_count; i += 3) {
+            hit_t local_hit;
+
+            vec3_t a = o->vtx[i + 0] + o->position;
+            vec3_t b = o->vtx[i + 1] + o->position;
+            vec3_t c = o->vtx[i + 2] + o->position;
+
+            if (!intersect_tri(r, a, b, c, &local_hit))
+                continue;
+
+            touch = true;
+            double local_depth = magnitude(local_hit.position - r.origin);
+            if (local_depth < depth) {
+                hit = local_hit;
+                depth = local_depth;
+            }
         }
 
-
-        *depth = std::numeric_limits<double>::infinity();
-        return vec3_t(0, 0, 0);
+        *out = hit;
+        return touch;
     }
-
 }

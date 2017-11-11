@@ -22,6 +22,7 @@ typedef struct vec3 {
         : x(x), y(y), z(z)
     { }
 
+    double operator[](int i);
 } vec3_t;
 
 
@@ -37,6 +38,12 @@ vec3_t operator*(vec3_t a, double b);
 vec3_t operator*(double a, vec3_t b);
 
 double dot(vec3_t a, vec3_t b);
+vec3_t cross(vec3_t a, vec3_t b);
 double magnitude(vec3_t v);
 vec3_t normalize(vec3_t v);
 std::string to_string(vec3_t v);
+
+vec3_t reflect(vec3_t i, vec3_t n);
+vec3_t saturate(vec3_t c);
+
+vec3_t rotate(vec3_t in, vec3_t axis, double angle);

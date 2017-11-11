@@ -3,63 +3,79 @@
 
 #include "raytracing.hh"
 
-#if 1
-uint8_t intersect_sphere(ray_t r, vec3_t center, double rad, vec3_t *out)
+uint8_t intersect_sphere(ray_t r, vec3_t center, double rad, hit_t *hit)
 {
     r.direction = normalize(r.direction);
     vec3_t e0 = center - r.origin;
 
     double v = dot(e0, r.direction);
-    double disc = rad * rad - (dot(e0, e0) - v * v);
-
-    if (disc < 0)
-        return 0;
-    
-    double d = sqrt(disc);
-    vec3_t point_a = r.origin + r.direction * (v - d);
-    double dot_pr = dot(-point_a, r.direction);
-
-    vec3_t point_b = point_a + normalize(r.direction);
-    point_b = point_b * rad * 2.0 * dot_pr;
-
-    if (magnitude(r.origin - center) < rad)
-        point_a = point_b;
-
-    if (dot(point_a - r.origin, r.direction) <= 0.0f)
-        return 0;
-
-    *out = point_a;
-    return 1;
-}
-#else
-
-uint8_t intersect_sphere(ray_t r, vec3_t center, double rad, vec3_t *out)
-{
-    double t0, t1;
+    double d2 = dot(e0, e0) - v * v;
     double rad2 = rad * rad;
-    vec3_t dir = normalize(r.direction);
-
-    vec3_t l = center - r.origin;
-    double tca = dot(l, dir);
-    double d2 = dot(l, l) - tca * tca; 
 
     if (d2 > rad2)
         return 0;
 
-    double tch = sqrt(rad2 - d2);
-    t0 = tca - tch;
-    t1 = tca + tch;
+    double d = sqrt(rad2 - d2);
+
+    double t0 = v - d;
+    double t1 = v + d;
 
     if (t0 > t1)
         std::swap(t0, t1);
 
-    if (t0 < 0) {
+    if (t0 < 0)
         t0 = t1;
-        if (t0 < 0)
-            return 0;
-    }
 
-    *out = r.origin + dir * t0;
+    if (t0 < 0)
+        return 0;
+
+    hit->position = r.origin + r.direction * t0;
+    hit->normal = normalize(hit->position - center);
+
     return 1;
 }
-#endif
+
+uint8_t intersect_plane(ray_t r, vec3_t a, vec3_t b, vec3_t c, hit_t *hit)
+{
+    r.direction = normalize(r.direction);
+
+    vec3_t ab = normalize(b - a);
+    vec3_t ac = normalize(c - a);
+
+    vec3_t normal = normalize(cross(ab, ac));
+    double d = dot(normal, r.direction);
+
+    if (abs(d) < 0.0001) //Ray // to tri
+        return 0;
+
+    double t = dot(a - r.origin, normal) / d;
+    if (t < 0) //Tri behind our ray
+        return 0;
+
+    hit->position = r.origin + t * r.direction;
+    hit->normal = normalize(normal);
+    return true;
+}
+
+uint8_t intersect_tri(ray_t r, vec3_t a, vec3_t b, vec3_t c, hit_t *out)
+{
+    hit_t hit;
+
+    if (!intersect_plane(r, a, b, c, &hit))
+        return 0;
+
+    vec3_t tmp = cross(b - a, hit.position - a);
+    if (dot(hit.normal, tmp) < 0)
+        return 0;
+
+    tmp = cross(c - b, hit.position - b);
+    if (dot(hit.normal, tmp) < 0)
+        return 0;
+
+    tmp = cross(a - c, hit.position - c);
+    if (dot(hit.normal, tmp) < 0)
+        return 0;
+
+    *out = hit;
+    return 1;
+}

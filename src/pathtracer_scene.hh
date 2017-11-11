@@ -8,7 +8,7 @@
 namespace pathtracer
 {
     typedef enum object_type {
-        SPHERE,
+        SPHERE, PLANE, MESH
     } object_type_e;
 
     typedef struct object {
@@ -21,6 +21,18 @@ namespace pathtracer
     typedef struct object_sphere : public object_t {
         float radius;
     } object_sphere_t;
+
+    typedef struct object_mesh : public object_t {
+        vec3_t *vtx;
+        uint64_t vtx_count;
+    } object_mesh_t;
+
+    typedef struct object_plane : public object_t {
+        vec3_t a;
+        vec3_t b;
+        vec3_t c;
+    } object_plane_t;
+
 
     typedef struct scene {
         uint32_t width;

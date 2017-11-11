@@ -18,6 +18,7 @@ namespace pathtracer
     void render_scene(scene_t *scene);
     vec3_t render_pixel(scene_t *scene, ray_t ray, uint32_t bounce = 0);
 
-    vec3_t render_object(scene_t *scene, object_sphere_t *o, ray_t r,
-                         double *depth, uint32_t bounce);
+    bool intersect_object(scene_t *scene, object_sphere_t *o, ray_t r, hit_t *out);
+    bool intersect_object(scene_t *scene, object_plane_t *o, ray_t r, hit_t *out);
+    bool intersect_object(scene_t *scene, object_mesh_t *o, ray_t r, hit_t *out);
 }
