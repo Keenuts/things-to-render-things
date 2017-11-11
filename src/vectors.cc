@@ -96,7 +96,7 @@ vec3_t saturate(vec3_t c)
 
 double& vec3_t::operator[](int i)
 {
-    assert(i < 0 || i > 3 && "Invalid index");
+    assert(i >= 0 && i < 3 && "Invalid subscript index on vector");
 
     if (i == 0)
         return x;
@@ -106,32 +106,22 @@ double& vec3_t::operator[](int i)
 
 }
 
-
-vec3_t rotate(vec3_t in, vec3_t axis, double angle)
+vec3_t rotate(vec3_t in, vec3_t angles)
 {
-    mat3_t x_rot, y_rot, z_rot;
+    mat3_t x_rot(0.0), y_rot(0.0), z_rot(0.0);
 
     x_rot[0] = vec3_t(1, 0,          0);
-    x_rot[1] = vec3_t(0, cos(angle), -sin(angle));
-    x_rot[2] = vec3_t(0, sin(angle), cos(angle));
+    x_rot[1] = vec3_t(0, cos(angles.x), -sin(angles.x));
+    x_rot[2] = vec3_t(0, sin(angles.x), cos(angles.x));
 
-    y_rot[0] = vec3_t(cos(angle),  0,          sin(angle));
-    y_rot[1] = vec3_t(0,           cos(angle), 0);
-    y_rot[2] = vec3_t(-sin(angle), 0,          cos(angle));
+    y_rot[0] = vec3_t(cos(angles.y),  0,          sin(angles.y));
+    y_rot[1] = vec3_t(0,              1,          0);
+    y_rot[2] = vec3_t(-sin(angles.y), 0,          cos(angles.y));
 
-    z_rot[0] = vec3_t(cos(angle), -sin(angle), 0);
-    z_rot[1] = vec3_t(sin(angle), cos(angle),  0);
+    z_rot[0] = vec3_t(cos(angles.z), -sin(angles.z), 0);
+    z_rot[1] = vec3_t(sin(angles.z), cos(angles.z),  0);
     z_rot[2] = vec3_t(0,          0,           1);
 
-    if (!is_zero(axis.x))
-        in = x_rot * in;
-    if (!is_zero(axis.y))
-        in = y_rot * in;
-    if (!is_zero(axis.z))
-        in = z_rot * in;
-
+    in = x_rot * (z_rot * (y_rot * in));
     return in;
 }
-
-
-

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <vector>
 
+#include "helpers.hh"
 #include "pathtracer_renderer.hh"
 #include "pathtracer_scene.hh"
 #include "vectors.hh"
@@ -35,11 +36,12 @@ int main()
     pathtracer::scene_t scene;
     memset(&scene, 0, sizeof(scene));
 
-    scene.width = 1024;
-    scene.height = 1024;
+    scene.width = 512;
+    scene.height = 512;
     scene.camera_position = vec3_t(2, 0, -15);
     scene.camera_direction = vec3_t(-0.1, 0.2, 1);
     scene.objects = std::vector<pathtracer::object_t*>(0);
+    //scene.lights = std::vector<pathtracer:;light_t*>(0);
 
     auto r_sphere = create_sphere(vec3_t(5, 3, 50), 1.0f, vec3_t(1.0, 0, 0));
     auto g_sphere = create_sphere(vec3_t(0, 4.5, 100), 10.0f, vec3_t(0, 1.0, 0));
@@ -50,10 +52,12 @@ int main()
     mesh.position = vec3_t(0, 0, 50);
     mesh.color = vec3_t(0, 1.0, 1.0);
     mesh.vtx = new vec3_t[3];
-    mesh.vtx[0] = vec3_t(0, -5, 10);
-    mesh.vtx[1] = vec3_t(10, 10, 0);
-    mesh.vtx[2] = vec3_t(10, -5, 0);
+    mesh.vtx[0] = vec3_t(-5, -5, 0);
+    mesh.vtx[1] = vec3_t(5, 5, 0);
+    mesh.vtx[2] = vec3_t(5, -5, 0);
     mesh.vtx_count = 3;
+
+    mesh.rotation = vec3_t(DEG2RAD(0.0), DEG2RAD(0.0), DEG2RAD(270.0));
 
     
     auto floor = create_plane(vec3_t(0, -5, 0), vec3_t(0, 1, 0),

@@ -1,6 +1,8 @@
 #pragma once
 
 #define D_EPSYLON 0.00001
+#define PI 3.14159265358979323846
+#define DEG2RAD(x) ((x) * ((PI * 2.0) / 360.0))
 
 template<typename T>
 T lerp(T a, T b, T w)

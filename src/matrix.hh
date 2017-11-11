@@ -9,7 +9,7 @@ typedef struct mat3 {
     mat3(double v);
     mat3(vec3_t values[3]);
 
-    vec3_t operator[](int i);
+    vec3_t& operator[](int i);
 } mat3_t;
 
 vec3_t operator*(mat3_t, vec3_t);

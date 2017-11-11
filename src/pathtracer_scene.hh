@@ -15,6 +15,7 @@ namespace pathtracer
         object_type_e type;
 
         vec3_t position;
+        vec3_t rotation;
         vec3_t color;
     } object_t;
 

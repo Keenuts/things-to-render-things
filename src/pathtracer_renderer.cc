@@ -9,7 +9,6 @@
 #include "helpers.hh"
 
 #define STRIDE 4 //(BGR)
-#define PI 3.14159265358979323846
 
 namespace pathtracer
 {
@@ -18,9 +17,8 @@ namespace pathtracer
         double width = scene->width;
         double height = scene->height;
         const double FOV = 45.0;
-        const double DEG2RAD = (PI * 2.0) / 360.0;
 
-        double L = width / (tan(DEG2RAD * (FOV / 2.0)) * 2.0);
+        double L = width / (tan(DEG2RAD(FOV / 2.0)) * 2.0);
 
         vec3_t middle = scene->camera_position + scene->camera_direction * L;
         double s_width = lerp(-width, width, x / width) / 2.0;
@@ -108,7 +106,7 @@ namespace pathtracer
             if (tmp_depth < depth) {
                 color = std::max(0.2, dot(hit.normal, -light)) * o->color;
 
-                if (bounce < 2) {
+                if (bounce < 2 && 0) {
                     ray_t refl_ray;
 
                     refl_ray.origin = hit.position + hit.normal * 0.1;
@@ -131,7 +129,7 @@ namespace pathtracer
 
     bool intersect_object(scene_t *scene, object_plane_t *o, ray_t r, hit_t *out)
     {
-        return intersect_plane(r, o->position, o->normal, out);
+        return intersect_plane(r, o->position, rotate(o->normal, o->rotation), out);
     }
 
     bool intersect_object(scene_t *scene, object_mesh_t *o, ray_t r, hit_t *out)
@@ -145,9 +143,9 @@ namespace pathtracer
         for (uint64_t i = 0; i < o->vtx_count; i += 3) {
             hit_t local_hit;
 
-            vec3_t a = o->vtx[i + 0] + o->position;
-            vec3_t b = o->vtx[i + 1] + o->position;
-            vec3_t c = o->vtx[i + 2] + o->position;
+            vec3_t a = rotate(o->vtx[i + 0], o->rotation) + o->position;
+            vec3_t b = rotate(o->vtx[i + 1], o->rotation) + o->position;
+            vec3_t c = rotate(o->vtx[i + 2], o->rotation) + o->position;
 
             if (!intersect_tri(r, a, b, c, &local_hit))
                 continue;
