@@ -28,9 +28,7 @@ namespace pathtracer
     } object_mesh_t;
 
     typedef struct object_plane : public object_t {
-        vec3_t a;
-        vec3_t b;
-        vec3_t c;
+        vec3_t normal;
     } object_plane_t;
 
 

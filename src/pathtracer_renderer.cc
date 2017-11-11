@@ -131,10 +131,7 @@ namespace pathtracer
 
     bool intersect_object(scene_t *scene, object_plane_t *o, ray_t r, hit_t *out)
     {
-        vec3_t a = o->a + o->position;
-        vec3_t b = o->b + o->position;
-        vec3_t c = o->c + o->position;
-        return intersect_plane(r, a, b, c, out);
+        return intersect_plane(r, o->position, o->normal, out);
     }
 
     bool intersect_object(scene_t *scene, object_mesh_t *o, ray_t r, hit_t *out)

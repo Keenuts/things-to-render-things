@@ -35,14 +35,10 @@ uint8_t intersect_sphere(ray_t r, vec3_t center, double rad, hit_t *hit)
     return 1;
 }
 
-uint8_t intersect_plane(ray_t r, vec3_t a, vec3_t b, vec3_t c, hit_t *hit)
+uint8_t intersect_plane(ray_t r, vec3_t a, vec3_t normal, hit_t *hit)
 {
     r.direction = normalize(r.direction);
 
-    vec3_t ab = normalize(b - a);
-    vec3_t ac = normalize(c - a);
-
-    vec3_t normal = normalize(cross(ab, ac));
     double d = dot(normal, r.direction);
 
     if (abs(d) < 0.0001) //Ray // to tri
@@ -61,7 +57,14 @@ uint8_t intersect_tri(ray_t r, vec3_t a, vec3_t b, vec3_t c, hit_t *out)
 {
     hit_t hit;
 
-    if (!intersect_plane(r, a, b, c, &hit))
+    vec3_t ab = normalize(b - a);
+    vec3_t ac = normalize(c - a);
+    vec3_t normal = normalize(cross(ab, ac));
+
+    if (dot(normal, r.direction) > 0) // Back culling
+        return 0;
+
+    if (!intersect_plane(r, a, normal, &hit))
         return 0;
 
     vec3_t tmp = cross(b - a, hit.position - a);

@@ -3,6 +3,7 @@
 #include <string>
 
 #include "vectors.hh"
+#include "matrix.hh"
 #include "helpers.hh"
 
 vec3_t operator+(vec3_t a, vec3_t b)
@@ -93,7 +94,7 @@ vec3_t saturate(vec3_t c)
     return c;
 }
 
-double vec3_t::operator[](int i)
+double& vec3_t::operator[](int i)
 {
     assert(i < 0 || i > 3 && "Invalid index");
 
@@ -106,7 +107,31 @@ double vec3_t::operator[](int i)
 }
 
 
+vec3_t rotate(vec3_t in, vec3_t axis, double angle)
+{
+    mat3_t x_rot, y_rot, z_rot;
 
+    x_rot[0] = vec3_t(1, 0,          0);
+    x_rot[1] = vec3_t(0, cos(angle), -sin(angle));
+    x_rot[2] = vec3_t(0, sin(angle), cos(angle));
+
+    y_rot[0] = vec3_t(cos(angle),  0,          sin(angle));
+    y_rot[1] = vec3_t(0,           cos(angle), 0);
+    y_rot[2] = vec3_t(-sin(angle), 0,          cos(angle));
+
+    z_rot[0] = vec3_t(cos(angle), -sin(angle), 0);
+    z_rot[1] = vec3_t(sin(angle), cos(angle),  0);
+    z_rot[2] = vec3_t(0,          0,           1);
+
+    if (!is_zero(axis.x))
+        in = x_rot * in;
+    if (!is_zero(axis.y))
+        in = y_rot * in;
+    if (!is_zero(axis.z))
+        in = z_rot * in;
+
+    return in;
+}
 
 
 

@@ -7,14 +7,27 @@
 #include "vectors.hh"
 
 static pathtracer::object_plane_t
-    create_plane(vec3_t pt, vec3_t n, vec3_t color)
+    create_plane(vec3_t pt, vec3_t normal, vec3_t color)
 {
     pathtracer::object_plane_t plane;
     plane.type = pathtracer::object_type_e::PLANE;
     plane.position = pt;
+    plane.normal = normal;
     plane.color = color;
 
     return plane;
+}
+
+static pathtracer::object_sphere_t
+    create_sphere(vec3_t center, float rad, vec3_t color)
+{
+    pathtracer::object_sphere_t s;
+    s.type = pathtracer::object_type_e::SPHERE;
+    s.position = center;
+    s.radius = rad;
+    s.color = color;
+
+    return s;
 }
 
 int main()
@@ -28,49 +41,29 @@ int main()
     scene.camera_direction = vec3_t(-0.1, 0.2, 1);
     scene.objects = std::vector<pathtracer::object_t*>(0);
 
-    pathtracer::object_sphere_t first_sphere;
-    first_sphere.type = pathtracer::object_type_e::SPHERE;
-    first_sphere.position = vec3_t(-25, 4.5, 100);
-    first_sphere.color = vec3_t(0, 0, 1.0); //B
-    first_sphere.radius = 10.0f;
+    auto r_sphere = create_sphere(vec3_t(5, 3, 50), 1.0f, vec3_t(1.0, 0, 0));
+    auto g_sphere = create_sphere(vec3_t(0, 4.5, 100), 10.0f, vec3_t(0, 1.0, 0));
+    auto b_sphere = create_sphere(vec3_t(-25, 4.5, 100), 10.0f, vec3_t(0, 0, 1.0));
 
-    pathtracer::object_sphere_t second_sphere;
-    second_sphere.type = pathtracer::object_type_e::SPHERE;
-    second_sphere.position = vec3_t(0, 4.5, 100);
-    second_sphere.color = vec3_t(0, 1.0, 0); //G
-    second_sphere.radius = 10.0f;
-
-    pathtracer::object_sphere_t third_sphere;
-    third_sphere.type = pathtracer::object_type_e::SPHERE;
-    third_sphere.position = vec3_t(5, 3, 50);
-    third_sphere.color = vec3_t(1.0, 0, 0); //R
-    third_sphere.radius = 1.0f;
-
-    pathtracer::object_mesh_t first_mesh;
-    first_mesh.type = pathtracer::object_type_e::MESH;
-    first_mesh.position = vec3_t(0, -5, 20);
-    first_mesh.color = vec3_t(0, 1.0, 1.0);
-    first_mesh.vtx = new vec3_t[3];
-    first_mesh.vtx_count = 3;
+    pathtracer::object_mesh_t mesh;
+    mesh.type = pathtracer::object_type_e::MESH;
+    mesh.position = vec3_t(0, 0, 50);
+    mesh.color = vec3_t(0, 1.0, 1.0);
+    mesh.vtx = new vec3_t[3];
+    mesh.vtx[0] = vec3_t(0, -5, 10);
+    mesh.vtx[1] = vec3_t(10, 10, 0);
+    mesh.vtx[2] = vec3_t(10, -5, 0);
+    mesh.vtx_count = 3;
 
     
-    auto first_plane = create_plane(vec3_t(0, -1, 0), vec3_t(0, 1, 0),
+    auto floor = create_plane(vec3_t(0, -5, 0), vec3_t(0, 1, 0),
                                     vec3_t(1.0, 1.0, 1.0));
 
-    pathtracer::object_plane_t second_plane;
-    second_plane.type = pathtracer::object_type_e::PLANE;
-    second_plane.position = vec3_t(-20, 0, 10);
-    second_plane.color = vec3_t(1.0, 0.0, 0.0);
-    second_plane.a = vec3_t(0, 0, 0);
-    second_plane.b = vec3_t(0, 1, 1);
-    second_plane.c = vec3_t(0, 0, 1);
-
-
-    scene.objects.push_back(&first_sphere);
-    scene.objects.push_back(&second_sphere);
-    scene.objects.push_back(&third_sphere);
-    scene.objects.push_back(&first_plane);
-    scene.objects.push_back(&second_plane);
+    scene.objects.push_back(&r_sphere);
+    scene.objects.push_back(&g_sphere);
+    scene.objects.push_back(&b_sphere);
+    scene.objects.push_back(&mesh);
+    scene.objects.push_back(&floor);
 
     pathtracer::render_scene(&scene);
 

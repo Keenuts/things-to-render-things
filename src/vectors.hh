@@ -22,7 +22,7 @@ typedef struct vec3 {
         : x(x), y(y), z(z)
     { }
 
-    double operator[](int i);
+    double& operator[](int i);
 } vec3_t;
 
 
