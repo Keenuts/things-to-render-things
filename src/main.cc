@@ -8,6 +8,7 @@
 #include "helpers.hh"
 #include "pathtracer_renderer.hh"
 #include "pathtracer_scene.hh"
+#include "pathtracer_framework.hh"
 #include "vectors.hh"
 
 static pathtracer::object_plane_t
@@ -53,22 +54,18 @@ int main()
 #define BLUE vec3_t(0.2, 0.65, 1.0)
 #define GRAY vec3_t(0.8, 0.8, 0.8)
 
-    std::srand(std::time(0));
+    std::srand(1);
 
     pathtracer::scene_t scene;
     memset(&scene, 0, sizeof(scene));
 
-    scene.width = WIDTH;
-    scene.height = HEIGHT;
     scene.camera_position = vec3_t(0, 0, -15);
     scene.camera_direction = vec3_t(0, 0, 1);
     scene.objects = std::vector<pathtracer::object_t*>(0);
-    scene.lights = std::vector<pathtracer::light_t*>(0);
 
     auto sphere_front = create_sphere(vec3_t(2, -3.5, 1), 1.5f, WHITE);
     auto sphere_back  = create_sphere(vec3_t(-2.5, -3.5, 8.5), 1.5f, WHITE);
 
-    
     auto floor = create_plane(vec3_t(0, -5, 0), vec3_t(0, 1, 0), GRAY);
     auto wall_front = create_plane(vec3_t(0, 0, 20), vec3_t(0, 0, -1), WHITE);
     auto wall_back = create_plane(vec3_t(0, 0, -20), vec3_t(0, 0, 1), WHITE);
@@ -89,9 +86,7 @@ int main()
     scene.objects.push_back(&wall_back);
     scene.objects.push_back(&light);
 
-    scene.lights.push_back(&light);
-
-    pathtracer::render_scene(&scene);
+    pathtracer::render_scene(&scene, WIDTH, HEIGHT);
 
     return 0;
 }
