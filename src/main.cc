@@ -1,7 +1,10 @@
+#include <cstdlib>
+#include <ctime>
 #include <stdio.h>
 #include <string.h>
 #include <vector>
 
+#include "defines.hh"
 #include "helpers.hh"
 #include "pathtracer_renderer.hh"
 #include "pathtracer_scene.hh"
@@ -31,43 +34,62 @@ static pathtracer::object_sphere_t
     return s;
 }
 
+static pathtracer::area_light_t
+    create_area_light(vec3_t pos, vec3_t color, double width, double length)
+{
+    pathtracer::area_light_t l;
+    l.type = pathtracer::object_type_e::AREA_LIGHT;
+    l.position = pos;
+    l.color = color;
+    l.size = vec3_t(width, 0.0, length);
+
+    return l;
+}
+
 int main()
 {
+#define WHITE vec3_t(1.0, 1.0, 1.0)
+#define RED vec3_t(1.0, 0.2, 0.0)
+#define BLUE vec3_t(0.2, 0.65, 1.0)
+#define GRAY vec3_t(0.8, 0.8, 0.8)
+
+    std::srand(std::time(0));
+
     pathtracer::scene_t scene;
     memset(&scene, 0, sizeof(scene));
 
-    scene.width = 512;
-    scene.height = 512;
-    scene.camera_position = vec3_t(2, 0, -15);
-    scene.camera_direction = vec3_t(-0.1, 0.2, 1);
+    scene.width = WIDTH;
+    scene.height = HEIGHT;
+    scene.camera_position = vec3_t(0, 0, -15);
+    scene.camera_direction = vec3_t(0, 0, 1);
     scene.objects = std::vector<pathtracer::object_t*>(0);
-    //scene.lights = std::vector<pathtracer:;light_t*>(0);
+    scene.lights = std::vector<pathtracer::light_t*>(0);
 
-    auto r_sphere = create_sphere(vec3_t(5, 3, 50), 1.0f, vec3_t(1.0, 0, 0));
-    auto g_sphere = create_sphere(vec3_t(0, 4.5, 100), 10.0f, vec3_t(0, 1.0, 0));
-    auto b_sphere = create_sphere(vec3_t(-25, 4.5, 100), 10.0f, vec3_t(0, 0, 1.0));
-
-    pathtracer::object_mesh_t mesh;
-    mesh.type = pathtracer::object_type_e::MESH;
-    mesh.position = vec3_t(0, 0, 50);
-    mesh.color = vec3_t(0, 1.0, 1.0);
-    mesh.vtx = new vec3_t[3];
-    mesh.vtx[0] = vec3_t(-5, -5, 0);
-    mesh.vtx[1] = vec3_t(5, 5, 0);
-    mesh.vtx[2] = vec3_t(5, -5, 0);
-    mesh.vtx_count = 3;
-
-    mesh.rotation = vec3_t(DEG2RAD(0.0), DEG2RAD(0.0), DEG2RAD(270.0));
+    auto sphere_front = create_sphere(vec3_t(2, -3.5, 1), 1.5f, WHITE);
+    auto sphere_back  = create_sphere(vec3_t(-2.5, -3.5, 8.5), 1.5f, WHITE);
 
     
-    auto floor = create_plane(vec3_t(0, -5, 0), vec3_t(0, 1, 0),
-                                    vec3_t(1.0, 1.0, 1.0));
+    auto floor = create_plane(vec3_t(0, -5, 0), vec3_t(0, 1, 0), GRAY);
+    auto wall_front = create_plane(vec3_t(0, 0, 20), vec3_t(0, 0, -1), WHITE);
+    auto wall_back = create_plane(vec3_t(0, 0, -20), vec3_t(0, 0, 1), WHITE);
 
-    scene.objects.push_back(&r_sphere);
-    scene.objects.push_back(&g_sphere);
-    scene.objects.push_back(&b_sphere);
-    scene.objects.push_back(&mesh);
+    auto wall_right = create_plane(vec3_t(5, 0, 0), vec3_t(-1, 0, 0), BLUE);
+    auto wall_left = create_plane(vec3_t(-5, 0, 0), vec3_t(1, 0, 0), RED);
+    auto roof = create_plane(vec3_t(0, 5, 0), vec3_t(0, -1, 0), GRAY);
+
+    auto light = create_area_light(vec3_t(0.0, 4.9, 1.0), WHITE, 6, 6);
+
+    scene.objects.push_back(&sphere_front);
+    scene.objects.push_back(&sphere_back);
     scene.objects.push_back(&floor);
+    scene.objects.push_back(&roof);
+    scene.objects.push_back(&wall_right);
+    scene.objects.push_back(&wall_left);
+    scene.objects.push_back(&wall_front);
+    scene.objects.push_back(&wall_back);
+    scene.objects.push_back(&light);
+
+    scene.lights.push_back(&light);
 
     pathtracer::render_scene(&scene);
 

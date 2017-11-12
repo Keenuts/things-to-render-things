@@ -2,11 +2,13 @@
 #include <string.h>
 #include <limits>
 #include <cassert>
+#include <thread>
 
+#include "defines.hh"
+#include "helpers.hh"
 #include "lodepng.hh"
 #include "pathtracer_renderer.hh"
 #include "raytracing.hh"
-#include "helpers.hh"
 
 #define STRIDE 4 //(BGR)
 
@@ -51,15 +53,15 @@ namespace pathtracer
 
                 ray_t r = create_ray_from_px(x, y, scene);
 
-                vec3_t color = render_pixel(scene, r);
+                vec3_t color = render_pixel(scene, r, 0);
 
                 info.output_frame[(info.width * y + x) * STRIDE + 0] = color.r * 255.0;
                 info.output_frame[(info.width * y + x) * STRIDE + 1] = color.g * 255.0;
                 info.output_frame[(info.width * y + x) * STRIDE + 2] = color.b * 255.0;
                 info.output_frame[(info.width * y + x) * STRIDE + 3] = 255;
-            }
 
-            float percent = y / (float)(info.height);
+            }
+            float percent = (y * info.width) / (float)(info.height * info.width);
             printf("\rprogress: %.2f%%    ", percent * 100.0f);
         }
         printf("\rprogress: 100%%    \n");
@@ -74,52 +76,145 @@ namespace pathtracer
         printf("[ OK ] Memory freed.\n");
     }
 
-    vec3_t render_pixel(scene_t *scene, ray_t ray, uint32_t bounce)
+    vec3_t compute_dir_light(scene_t *scene, dir_light_t *light, hit_t hit)
     {
+        return std::max(0.0, dot(hit.normal, -light->direction)) * light->color;
+    }
+
+    vec3_t compute_area_light(scene_t *scene, area_light_t *light, hit_t hit)
+    {
+        hit_t l_hit;
+        ray_t r;
+        r.origin = hit.position + hit.normal * 0.1;
+        r.direction = normalize(light->position - hit.position);
+
+        if (!intersect_scene(scene, r, &l_hit))
+            return vec3_t(0, 0, 0);
+
+        if ((void*)l_hit.object != (void*)light)
+            return vec3_t(0, 0, 0);
+
+        return std::max(0.0, dot(hit.normal, r.direction)) * light->color;
+    }
+
+    vec3_t compute_lighting(scene_t *scene, hit_t hit)
+    {
+        vec3_t light(0.1, 0.1, 0.1);
+
+        for (light_t *l : scene->lights) {
+            switch (l->type) {
+                case object_type_e::DIR_LIGHT:
+                    light = light + compute_dir_light(scene, (dir_light_t*)l, hit);
+                    break;
+                case object_type_e::AREA_LIGHT:
+                    light = light + compute_area_light(scene, (area_light_t*)l, hit);
+                    break;
+                default:
+                    assert(0 && "Object type unknown.");
+            }
+        }
+        return saturate(saturate(light) * hit.object->color);
+    }
+
+    bool intersect_scene(scene_t *scene, ray_t ray, hit_t *out)
+    {
+        hit_t hit;
         double depth = std::numeric_limits<double>::infinity();
-        vec3_t color(0, 0, 0);
-        vec3_t light = normalize(vec3_t(0.3, -1.0, 0.2));
+        bool touch = false;
 
         for (object_t *o : scene->objects) {
-            hit_t hit;
-            bool touch;
+            hit_t local_hit;
+            bool local_touch;
 
             switch (o->type) {
                 case object_type_e::SPHERE:
-                    touch = intersect_object(scene, (object_sphere_t*)o, ray, &hit);
+                    local_touch = intersect_object(scene, (object_sphere_t*)o, ray, &local_hit);
                     break;
                 case object_type_e::PLANE:
-                    touch = intersect_object(scene, (object_plane_t*)o, ray, &hit);
+                    local_touch = intersect_object(scene, (object_plane_t*)o, ray, &local_hit);
                     break;
                 case object_type_e::MESH:
-                    touch = intersect_object(scene, (object_mesh_t*)o, ray, &hit);
+                    local_touch = intersect_object(scene, (object_mesh_t*)o, ray, &local_hit);
+                    break;
+                case object_type_e::AREA_LIGHT:
+                    local_touch = intersect_object(scene, (area_light_t*)o, ray, &local_hit);
                     break;
                 default:
                     assert(0 && "Object type unknown.");
             };
 
-            if (!touch)
+            if (!local_touch)
                 continue;
+            touch = true;
 
-            double tmp_depth = magnitude(hit.position - ray.origin);
+            double tmp_depth = magnitude(local_hit.position - ray.origin);
 
             if (tmp_depth < depth) {
-                color = std::max(0.2, dot(hit.normal, -light)) * o->color;
-
-                if (bounce < 2 && 0) {
-                    ray_t refl_ray;
-
-                    refl_ray.origin = hit.position + hit.normal * 0.1;
-                    refl_ray.direction = reflect(ray.direction, hit.normal);
-
-                    vec3_t color_b = render_pixel(scene, refl_ray, bounce + 1);
-                    color = saturate(color_b * 0.4 + color * 0.6);
-                }
+                hit = local_hit;
+                hit.object = o;
                 depth = tmp_depth;
             }
         }
 
+        *out = hit;
+        return touch;
+    }
+
+    vec3_t render_pixel(scene_t *scene, ray_t ray, uint32_t bounce)
+    {
+#if defined(RAYTRACING)
+        hit_t hit;
+
+        if (!intersect_scene(scene, ray, &hit))
+            return vec3_t(0, 0, 0);
+
+        vec3_t color;
+
+        if (hit.object->type == object_type_e::AREA_LIGHT)
+            color = hit.object->color;
+        else
+            color = compute_lighting(scene, hit);
         return color;
+#else
+        vec3_t luminance(0.0, 0.0, 0.0);
+        uint32_t samples = 0;
+
+        for (uint32_t i = 0; i < SAMPLES_COUNT / (bounce + 1); i++) {
+            hit_t hit;
+            vec3_t sample_luminance;
+
+            if (!intersect_scene(scene, ray, &hit))
+                continue;
+            samples += 1;
+
+            if (hit.object->type == object_type_e::AREA_LIGHT) {
+                luminance = luminance + hit.object->color;
+                break;
+            }
+
+
+            ray_t n_ray;
+            n_ray.direction = get_hemisphere_random(hit.normal);
+            n_ray.origin = hit.position + hit.normal * D_EPSYLON;
+            
+            vec3_t BRDF = hit.object->color / PI;
+            vec3_t ir;
+
+            if (bounce < SAMPLE_DEPTH) {
+                vec3_t ir = render_pixel(scene, n_ray, bounce + 1)
+                            * dot(hit.normal, n_ray.direction);
+                sample_luminance = PI * 2.0 * BRDF * ir;
+            }
+            else
+                sample_luminance = BRDF;
+            luminance = luminance + sample_luminance;
+        }
+
+        if (samples == 0)
+            return saturate(luminance);
+        else
+            return saturate(luminance / samples);
+#endif
     }
 
     bool intersect_object(scene_t *scene, object_sphere_t *o, ray_t r, hit_t *out)
@@ -160,5 +255,29 @@ namespace pathtracer
 
         *out = hit;
         return touch;
+    }
+
+    bool intersect_object(scene_t *scene, area_light_t *o, ray_t r, hit_t *out)
+    {
+        hit_t hit;
+
+        vec3_t vt = rotate(o->size, o->rotation);
+        vec3_t a = vec3_t(-vt.x * 0.5, 0, -vt.z * 0.5);
+        vec3_t b = vec3_t(-vt.x * 0.5, 0,  vt.z * 0.5);
+        vec3_t c = vec3_t( vt.x * 0.5, 0,  vt.z * 0.5);
+        vec3_t d = vec3_t( vt.x * 0.5, 0, -vt.z * 0.5);
+
+        a = a + o->position;
+        b = b + o->position;
+        c = c + o->position;
+        d = d + o->position;
+
+        if (intersect_tri(r, a, d, c, out))
+            return true;
+
+        if (intersect_tri(r, a, c, b, out))
+            return true;
+
+        return false;
     }
 }

@@ -40,6 +40,24 @@ vec3_t operator*(double a, vec3_t b)
     return b * a;
 }
 
+vec3_t operator/(double a, vec3_t b)
+{
+    return b * (1.0 / a);
+}
+
+vec3_t operator/(vec3_t a, double b)
+{
+    return a * (1.0 / b);
+}
+
+vec3_t operator*(vec3_t a, vec3_t b)
+{
+    a.x *= b.x;
+    a.y *= b.y;
+    a.z *= b.z;
+    return a;
+}
+
 double dot(vec3_t a, vec3_t b)
 {
     return a.x * b.x + a.y * b.y + a.z * b.z;
@@ -124,4 +142,29 @@ vec3_t rotate(vec3_t in, vec3_t angles)
 
     in = x_rot * (z_rot * (y_rot * in));
     return in;
+}
+
+static inline double rand_0_1()
+{
+    double n = (double)std::rand() / RAND_MAX;
+    return n;
+}
+
+vec3_t get_hemisphere_random(vec3_t dir)
+{
+    double x, y, z;
+    double m;
+
+    do {
+        x = 2.0 * rand_0_1() - 1.0;
+        y = 2.0 * rand_0_1() - 1.0;
+        z = 2.0 * rand_0_1() - 1.0;
+        m = magnitude(vec3_t(x, y, z));
+    } while (m > 1.0);
+
+    vec3_t d = normalize(vec3_t(x, y, z));
+    if (dot(d, dir) < 0.0)
+        d = -d;
+
+    return d;
 }

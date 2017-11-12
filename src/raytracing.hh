@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pathtracer_scene.hh"
 #include "vectors.hh"
 
 typedef struct ray
@@ -11,6 +12,7 @@ typedef struct ray
 typedef struct intersection {
     vec3_t position;
     vec3_t normal;
+    pathtracer::object_t *object;
 } hit_t;
 
 uint8_t intersect_sphere(ray_t r, vec3_t center, double rad, hit_t *out);
