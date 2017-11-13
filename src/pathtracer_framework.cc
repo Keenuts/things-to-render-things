@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stack>
 #include <stdio.h>
 #include <thread>
@@ -7,26 +8,21 @@
 #include "pathtracer_framework.hh"
 #include "pathtracer_renderer.hh"
 #include "scoped_timer.hh"
+#include "opencl_wrapping.hh"
 
 #define STRIDE 4 //(RGBA)
 
 namespace pathtracer
 {
-    void render_scene(scene_t *scene, uint32_t width, uint32_t height)
+    __attribute__((unused)) // Unused if using OpenCL
+    void render_on_cpu(context_t& ctx, uint32_t width, uint32_t height)
     {
-        context_t ctx;
-
-        ctx.width = width;
-        ctx.height = height;
-        ctx.output_frame = new uint8_t[ctx.width * ctx.height * STRIDE];
-        ctx.scene = scene;
-
+        std::stack<std::thread> workers;
         uint32_t block_width = height / MAX_THREADS_X;
         uint32_t block_height = width / MAX_THREADS_Y;
+
         printf("Starting %u threads working on blocks [%ux%u] px.\n",
                 MAX_THREADS_X * MAX_THREADS_Y, block_width, block_height);
-
-        std::stack<std::thread> workers;
 
         for (uint32_t y = 0; y < sqrt(MAX_THREADS_Y); y++) {
             for (uint32_t x = 0; x < sqrt(MAX_THREADS_X); x ++) {
@@ -40,7 +36,6 @@ namespace pathtracer
         }
 
         printf("Waiting for threads to finish.\n");
-
         double elapsed;
         {
             scoped_timer_t timer(elapsed);
@@ -50,14 +45,27 @@ namespace pathtracer
                 workers.pop();
             }
         }
+    }
 
-        printf("Rendering done in %.2lf seconds.\n", elapsed);
+    void render_scene(scene_t *scene, uint32_t width, uint32_t height)
+    {
+        context_t ctx;
+
+        ctx.width = width;
+        ctx.height = height;
+        ctx.output_frame = new uint8_t[ctx.width * ctx.height * STRIDE];
+        ctx.scene = scene;
+
+#if defined(USE_OPENCL)
+        render_with_opencl(ctx, width, height);
+#else
+        render_on_cpu(ctx, width, height);
+#endif
 
         lodepng::encode("output.png", ctx.output_frame, ctx.width, ctx.height);
         printf("Output written to disk.\n");
 
         delete[] ctx.output_frame;
-        printf("Memory freed.\n");
     }
 
     void render_scene_chunk(context_t ctx, vec3_t size, vec3_t block_pos)

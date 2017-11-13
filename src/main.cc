@@ -49,9 +49,9 @@ static pathtracer::area_light_t
 
 int main()
 {
-#define WHITE vec3_t(1.0, 1.0, 1.0)
-#define RED vec3_t(1.0, 0.2, 0.0)
-#define BLUE vec3_t(0.2, 0.65, 1.0)
+#define WHITE vec3_t(0.95, 0.95, 0.95)
+#define RED vec3_t(0.98, 0.2, 0.0)
+#define BLUE vec3_t(0.2, 0.65, 0.98)
 #define GRAY vec3_t(0.8, 0.8, 0.8)
 
     std::srand(1);
@@ -63,7 +63,7 @@ int main()
     scene.camera_direction = vec3_t(0, 0, 1);
     scene.objects = std::vector<pathtracer::object_t*>(0);
 
-    auto sphere_front = create_sphere(vec3_t(2, -3.5, 1), 1.5f, WHITE);
+    auto sphere_front = create_sphere(vec3_t(2, -3.2, 1), 1.5f, WHITE);
     auto sphere_back  = create_sphere(vec3_t(-2.5, -3.5, 8.5), 1.5f, WHITE);
 
     auto floor = create_plane(vec3_t(0, -5, 0), vec3_t(0, 1, 0), GRAY);
@@ -85,6 +85,16 @@ int main()
     scene.objects.push_back(&wall_front);
     scene.objects.push_back(&wall_back);
     scene.objects.push_back(&light);
+
+    (void)sphere_front;
+    (void)sphere_back;
+    (void)floor;
+    (void)roof;
+    (void)wall_right;
+    (void)wall_left;
+    (void)wall_front;
+    (void)wall_back;
+    (void)light;
 
     pathtracer::render_scene(&scene, WIDTH, HEIGHT);
 

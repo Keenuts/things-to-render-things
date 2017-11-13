@@ -13,8 +13,12 @@ endif (DEBUG)
 include_directories(src)
 add_subdirectory(src)
 
-find_package(Threads)
+find_package(Threads REQUIRED)
+find_package(OpenCL REQUIRED)
+
+include_directories(${OpenCL_INCLUDE_DIRS})
 
 add_executable(pathtracer ${SRC})
 
 target_link_libraries(pathtracer ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(pathtracer ${OpenCL_LIBRARY})

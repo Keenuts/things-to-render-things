@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CL/cl.hpp>
 #include <stdint.h>
 
 #include "pathtracer_scene.hh"
@@ -12,6 +13,10 @@ namespace pathtracer
         uint32_t height;
         uint8_t *output_frame;
 
+        cl::Context opencl_ctx;
+        cl::Device device;
+        cl::Platform platform;
+        cl::Program kernel;
         scene_t *scene;
     } context_t;
 

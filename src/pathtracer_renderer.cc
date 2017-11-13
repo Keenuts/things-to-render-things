@@ -158,7 +158,6 @@ namespace pathtracer
                 break;
             }
 
-
             ray_t n_ray;
             n_ray.direction = get_hemisphere_random(hit.normal);
             n_ray.origin = hit.position + hit.normal * D_EPSYLON;

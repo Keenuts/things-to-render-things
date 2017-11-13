@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CL/cl.hpp>
 #include <stdint.h>
 #include <string>
 #include <math.h>
@@ -51,3 +52,5 @@ vec3_t saturate(vec3_t c);
 
 vec3_t rotate(vec3_t in, vec3_t angles);
 vec3_t get_hemisphere_random(vec3_t dir);
+
+cl_double3 to_double3(vec3_t v);

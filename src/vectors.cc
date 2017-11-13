@@ -168,3 +168,8 @@ vec3_t get_hemisphere_random(vec3_t dir)
 
     return d;
 }
+
+cl_double3 to_double3(vec3_t v)
+{
+    return { { v.x, v.y, v.z, 0.0 } };
+}

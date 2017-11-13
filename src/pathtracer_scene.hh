@@ -8,7 +8,7 @@
 namespace pathtracer
 {
     typedef enum object_type {
-        SPHERE, PLANE, MESH, DIR_LIGHT, OMNI_LIGHT, AREA_LIGHT
+        SPHERE, PLANE, MESH, AREA_LIGHT
     } object_type_e;
 
     typedef struct object {
@@ -51,9 +51,6 @@ namespace pathtracer
     // Scene
 
     typedef struct scene {
-        uint32_t width;
-        uint32_t height;
-
         vec3_t camera_position;
         vec3_t camera_direction;
 
