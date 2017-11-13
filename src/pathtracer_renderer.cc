@@ -140,7 +140,7 @@ namespace pathtracer
         return touch;
     }
 
-    vec3_t render_ray(scene_t *scene, ray_t ray, uint32_t bounce)
+    vec3_t pathtrace(scene_t *scene, ray_t ray, uint32_t bounce)
     {
         vec3_t luminance(0.0, 0.0, 0.0);
         uint32_t samples = 1;
@@ -166,7 +166,7 @@ namespace pathtracer
             vec3_t ir;
 
             if (bounce < SAMPLE_DEPTH) {
-                vec3_t ir = render_ray(scene, n_ray, bounce + 1)
+                vec3_t ir = pathtrace(scene, n_ray, bounce + 1)
                             * dot(hit.normal, n_ray.direction);
                 sample_luminance = PI * 2.0 * BRDF * ir;
             }
@@ -176,5 +176,47 @@ namespace pathtracer
         }
 
         return saturate(luminance / samples);
+    }
+
+    vec3_t raytrace(scene_t *scene, ray_t ray, uint32_t bounce)
+    {
+        vec3_t luminance(0.1, 0.1, 0.1);
+        hit_t hit;
+
+        if (!intersect_scene(scene, ray, &hit))
+            return luminance;
+
+        if (hit.object->type == object_type_e::AREA_LIGHT)
+            return hit.object->color;
+
+        vec3_t light = vec3_t(0.0);
+
+        for (object_t *o : scene->objects) {
+            if (o->type != object_type_e::AREA_LIGHT)
+                continue;
+
+             vec3_t l = vec3_t(0.0);
+
+             for (uint32_t i = 0; i < SOFT_SHADOW_SAMPLES; i++) {
+                 ray_t r;
+                 r.origin = hit.position + hit.normal * D_EPSYLON;
+                 vec3_t d1 = normalize(o->position - hit.position);
+                 vec3_t d2 = get_hemisphere_random(hit.normal);
+
+                 r.direction = lerp(d1, d2, SOFT_SHADOW_RADIUS);
+                 hit_t h;
+
+                 if (!intersect_scene(scene, r, &h))
+                     continue;
+                 if (h.object->type != object_type_e::AREA_LIGHT)
+                     continue;
+
+                 l = l + h.object->color;
+             }
+
+             light = light + (l / SOFT_SHADOW_SAMPLES);
+        }
+
+        return hit.object->color * light;
     }
 }

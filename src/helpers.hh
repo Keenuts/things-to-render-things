@@ -5,7 +5,7 @@
 #define DEG2RAD(x) ((x) * ((PI * 2.0) / 360.0))
 
 template<typename T>
-T lerp(T a, T b, T w)
+T lerp(T a, T b, double w)
 {
     return a * (1.0 - w) + b * w;
 }

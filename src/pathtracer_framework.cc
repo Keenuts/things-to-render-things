@@ -15,7 +15,7 @@
 namespace pathtracer
 {
     __attribute__((unused)) // Unused if using OpenCL
-    void render_on_cpu(context_t& ctx, uint32_t width, uint32_t height)
+    void render_cpu(context_t& ctx, uint32_t width, uint32_t height)
     {
         std::stack<std::thread> workers;
         uint32_t block_width = height / MAX_THREADS_X;
@@ -56,10 +56,14 @@ namespace pathtracer
         ctx.output_frame = new uint8_t[ctx.width * ctx.height * STRIDE];
         ctx.scene = scene;
 
-#if defined(USE_OPENCL)
-        render_with_opencl(ctx, width, height);
+#if defined(USE_RAYTRACER) && defined(USE_OPENCL)
+    #error "GPU Raytracer not supported. Raytracer only used for debug purposes"
 #else
-        render_on_cpu(ctx, width, height);
+    #if defined(USE_OPENCL)
+        pathtracer_gpu(ctx, width, height);
+    #else
+        render_cpu(ctx, width, height);
+    #endif
 #endif
 
         lodepng::encode("output.png", ctx.output_frame, ctx.width, ctx.height);
@@ -81,7 +85,11 @@ namespace pathtracer
             for (uint32_t x = 0; x < size_x; x++) {
 
                 ray_t r = get_ray_from_camera(ctx, start_x + x, start_y + y);
-                vec3_t color = render_ray(ctx.scene, r, 0);
+#if defined(USE_RAYTRACER)
+                vec3_t color = raytrace(ctx.scene, r, 0);
+#else
+                vec3_t color = pathtrace(ctx.scene, r, 0);
+#endif
 
                 out[(size_x * y + x) * STRIDE + 0] = color.r * 255.0;
                 out[(size_x * y + x) * STRIDE + 1] = color.g * 255.0;

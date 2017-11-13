@@ -46,5 +46,5 @@ namespace pathtracer
         cl::Image2D image;
     };
 
-    void render_with_opencl(context_t& ctx, uint32_t width, uint32_t height);
+    void pathtracer_gpu(context_t& ctx, uint32_t width, uint32_t height);
 }
