@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <fstream>
 #include <stdio.h>
+#include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include "defines.hh"
@@ -20,20 +22,20 @@ namespace pathtracer
 
         for (object_t *o : objects) {
             list[i].type = o->type;
-            list[i].position = to_double3(o->position);
-            list[i].rotation = to_double3(o->rotation);
-            list[i].color = to_double3(o->color);
+            list[i].position = to_float3(o->position);
+            list[i].rotation = to_float3(o->rotation);
+            list[i].color = to_float3(o->color);
 
             switch(o->type) {
                 case object_type_e::SPHERE:
                     list[i].radius = static_cast<object_sphere_t*>(o)->radius;
                     break;
                 case object_type_e::PLANE:
-                    list[i].normal = to_double3(static_cast<object_plane_t*>(o)->normal);
+                    list[i].normal = to_float3(static_cast<object_plane_t*>(o)->normal);
                     break;
                 case object_type_e::AREA_LIGHT:
-                    list[i].normal = to_double3(static_cast<area_light_t*>(o)->normal);
-                    list[i].size = to_double3(static_cast<area_light_t*>(o)->size);
+                    list[i].normal = to_float3(static_cast<area_light_t*>(o)->normal);
+                    list[i].size = to_float3(static_cast<area_light_t*>(o)->size);
                     break;
                 default:
                     assert(0 && "Unhandled object type.");
@@ -138,16 +140,31 @@ namespace pathtracer
         p.info.block_height = PX_PER_THREAD_Y;
         p.info.width = width;
         p.info.height = height;
-        p.info.camera_position = to_double3(scene->camera_position);
-        p.info.camera_direction = to_double3(scene->camera_direction);
-        p.info.camera_up = to_double3(VECTOR_UP);
-        p.info.camera_right = to_double3(VECTOR_RIGHT);
+        p.info.camera_position = to_float3(scene->camera_position);
+        p.info.camera_direction = to_float3(scene->camera_direction);
+        p.info.camera_up = to_float3(VECTOR_UP);
+        p.info.camera_right = to_float3(VECTOR_RIGHT);
         p.info.object_count = obj_count;
         p.info.vtx_count = vtx_count;
 
         return p;
     }
 
+    static void show_time(bool *finished)
+    {
+        double elapsed = 0.0;
+        while (!*finished) {
+            double l;
+            {
+                scoped_timer t(l);
+                printf("Elapsed time: %d:%0.2ds  \n\b\r", (int)(elapsed / 60.0),
+                (int)elapsed % 60);
+                sleep(1);
+            }
+            elapsed += l;
+        }
+        printf("done\n.");
+    }
 
     void pathtracer_gpu(context_t& ctx, uint32_t width, uint32_t height)
     {
@@ -158,30 +175,41 @@ namespace pathtracer
         struct kernel_parameters p = prepare_kernel_data(ctx, queue, width, height);
 
         cl::Kernel k = cl::Kernel(ctx.kernel,"pathtracer");
-        k.setArg(0, p.info);
-        k.setArg(1, p.objects);
-        k.setArg(2, p.vertex);
-        k.setArg(3, p.image);
+        cl_int res;
+        res = k.setArg(0, p.info);
+        assert(res == CL_SUCCESS);
+        res = k.setArg(1, p.objects);
+        assert(res == CL_SUCCESS);
+        res = k.setArg(2, p.vertex);
+        assert(res == CL_SUCCESS);
+        res = k.setArg(3, p.image);
+        assert(res == CL_SUCCESS);
 
 
         uint32_t gdim_x = width / PX_PER_THREAD_X;
         uint32_t gdim_y = height / PX_PER_THREAD_Y;
 
-        uint32_t dim_x = 64;
-        uint32_t dim_y = 64;
+        uint32_t dim_x = 32;
+        uint32_t dim_y = 32;
 
         printf("Opencl Dispatch: [%ux%u] [%ux%u].\n", gdim_x, gdim_y, dim_x, dim_y);
 
         double elapsed;
         {
             scoped_timer t(elapsed);
-            cl_int res = queue.enqueueNDRangeKernel(k,
+            res = queue.enqueueNDRangeKernel(k,
                 cl::NullRange,
                 cl::NDRange(gdim_x, gdim_y),
                 cl::NDRange(dim_x, dim_y)
             );
             assert(res == CL_SUCCESS);
+
+            bool finished = false;
+            std::thread timer(show_time, &finished);
             queue.finish();
+
+            finished = true;
+            timer.join();
         }
 
         cl::size_t<3> origin, region;

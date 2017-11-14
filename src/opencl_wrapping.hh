@@ -12,31 +12,31 @@
 namespace pathtracer
 {
     struct kernel_info {
-        int block_width;
-        int block_height;
-        int width;
-        int height;
+        cl_int block_width;
+        cl_int block_height;
+        cl_int width;
+        cl_int height;
 
-        cl_double3 camera_position;
-        cl_double3 camera_direction;
-        cl_double3 camera_up;
-        cl_double3 camera_right;
+        cl_float3 camera_position;
+        cl_float3 camera_direction;
+        cl_float3 camera_up;
+        cl_float3 camera_right;
 
-        uint64_t object_count;
-        uint64_t vtx_count;
+        ulong object_count;
+        ulong vtx_count;
     };
 
     struct kernel_object {
         object_type_e type;
-        cl_double3 position;
-        cl_double3 rotation;
-        cl_double3 color;
+        cl_float3 position;
+        cl_float3 rotation;
+        cl_float3 color;
 
-        double radius;
-        cl_double3 size;
-        cl_double3 normal;
-        uint64_t vtx_index;
-        uint64_t vtx_count;
+        float radius;
+        cl_float3 size;
+        cl_float3 normal;
+        ulong vtx_index;
+        ulong vtx_count;
     };
 
     struct kernel_parameters {

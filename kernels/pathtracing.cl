@@ -1,28 +1,30 @@
-#include "raytracing.hcl"
 #include "types.hcl"
+#include "helpers.hcl"
+#include "raytracing.hcl"
 
-#define SAMPLES_COUNT 30
+#define SAMPLES_COUNT 1024
 #define SAMPLE_DEPTH 4
 
 __constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE
                              | CLK_ADDRESS_CLAMP_TO_EDGE
                              | CLK_FILTER_NEAREST;
 
-static bool intersect_with_plane(object_t o, ray_t r, hit_t *out)
+static inline
+bool intersect_with_plane(object_t o, ray_t r, hit_t *out)
 {
-    //return intersect_plane(r, o.position, rotation(o.normal, o.rotation), out);
-    return intersect_plane(r, o.position, o.normal, out);
+    return intersect_plane(r, o.position, rotation(o.normal, o.rotation), out);
 }
 
-static bool intersect_with_area_light(object_t o, ray_t r, hit_t *out)
+static inline
+bool intersect_with_area_light(object_t o, ray_t r, hit_t *out)
 {
     hit_t hit;
 
-    double3 vt = o.size; //rotation(o.size, o.rotation);
-    double3 a = (double3)(-vt.x * 0.5, 0, -vt.z * 0.5);
-    double3 b = (double3)(-vt.x * 0.5, 0,  vt.z * 0.5);
-    double3 c = (double3)( vt.x * 0.5, 0,  vt.z * 0.5);
-    double3 d = (double3)( vt.x * 0.5, 0, -vt.z * 0.5);
+    float3 vt = rotation(o.size, o.rotation);
+    float3 a = (float3)(-vt.x * 0.5f, 0.0f, -vt.z * 0.5f);
+    float3 b = (float3)(-vt.x * 0.5f, 0.0f,  vt.z * 0.5f);
+    float3 c = (float3)( vt.x * 0.5f, 0.0f,  vt.z * 0.5f);
+    float3 d = (float3)( vt.x * 0.5f, 0.0f, -vt.z * 0.5f);
 
     a = a + o.position;
     b = b + o.position;
@@ -41,7 +43,7 @@ static bool intersect_with_area_light(object_t o, ray_t r, hit_t *out)
 static bool intersect_scene(scene_t *scene, ray_t ray, hit_t *out)
 {
     hit_t hit;
-    double depth = INFINITY;
+    float depth = INFINITY;
     bool touch = false;
 
     for (ulong i = 0; i < scene->object_count; i++) {
@@ -70,7 +72,7 @@ static bool intersect_scene(scene_t *scene, ray_t ray, hit_t *out)
             continue;
         touch = true;
 
-        double tmp_depth = length(local_hit.position - ray.origin);
+        float tmp_depth = length(local_hit.position - ray.origin);
 
         if (tmp_depth < depth) {
             hit = local_hit;
@@ -83,60 +85,45 @@ static bool intersect_scene(scene_t *scene, ray_t ray, hit_t *out)
     return touch;
 }
 
-#define POP(Stack, Rsp) stack[--rsp]
-#define PUSH(Stack, Rsp, Data) stack[rsp++] = Data
-#define BLACK (double3)(0.0, 0.0, 0.0)
-#define STACK_MAX (SAMPLE_DEPTH + 1)
+#define BLACK (float3)(0.0f, 0.0f, 0.0f)
 
-static double3 render_ray(scene_t *scene, ray_t ray)
+static float3 render_ray(scene_t *scene, ray_t ray)
 {
-    double3 stack[STACK_MAX];
-    ulong rsp = 0;
+    float3 mask = (float3)(1.0f, 1.0f, 1.0f);
+    float3 color = (float3)(0.0f, 0.0f, 0.0f);
 
-    while (true) {
+    for (uint i = 0; i < SAMPLE_DEPTH; i++) {
         hit_t hit;
 
         if (!intersect_scene(scene, ray, &hit)) {
-            PUSH(stack, rsp, BLACK);
+            color = BLACK;
             break;
         }
 
         if (hit.object.type == AREA_LIGHT) {
-            PUSH(stack, rsp, hit.object.color);
+            color += mask * hit.object.color * 3.0f;
             break;
         }
 
-        ray_t n_ray;
-        n_ray.direction = get_hemisphere_random(scene, hit.normal);
-        n_ray.origin = hit.position + hit.normal * D_EPSYLON;
+        float3 nl = dot(hit.normal, ray.direction) < 0 ? hit.normal : hit.normal * -1;
 
-        double3 BRDF = hit.object.color / PI;
-        BRDF = dot(hit.normal, n_ray.direction) * 2.0 * PI * BRDF;
-        PUSH(stack, rsp, saturate(BRDF));
+        ray.direction = get_hemisphere_random(scene, hit.normal);
+        ray.origin = hit.position + hit.normal * F_EPSYLON;
 
-        if (rsp >= SAMPLE_DEPTH)
-            break;
-
-        ray = n_ray;
+        mask *= hit.object.color;
+        mask *= dot(ray.direction, nl);
+        mask *= 2.0f;
     }
 
-    double3 result = (double3)(1.0, 1.0, 1.0);
-    do {
-        result *= POP(stack, rsp);
-    } while (rsp > 0);
-
-    return saturate(result);
+    return color;
 }
 
-#undef POP
-#undef PUSH
 #undef BLACK
-#undef STACK_MAX
 
 __kernel void pathtracer(
   struct kernel_info info,
   __global object_t *objects,
-  __global double3 *vertex,
+  __global float3 *vertex,
   __write_only image2d_t output
 )
 {
@@ -154,21 +141,19 @@ __kernel void pathtracer(
 
   scene.objects = objects;
 
-  for (int y = 0; y < info.block_width; y++) {
-    for (int x = 0; x < info.block_height; x++) {
+  for (int y = 0; y < info.block_height; y++) {
+    for (int x = 0; x < info.block_width; x++) {
       int2 local_pos = (int2)(pos.x + x, pos.y + y);
 
       int2 resolution = (int2)(info.width, info.height);
       ray_t r = compute_ray(scene, resolution, local_pos);
 
-      double3 sum = (double3)(0, 0, 0);
+      float3 color = (float3)(0, 0, 0);
 
-      for (uint i = 0; i < SAMPLES_COUNT; i++) {
-        double3 c = render_ray(&scene, r);
-        sum += c;
-      }
+      for (uint i = 0; i < SAMPLES_COUNT; i++)
+        color += render_ray(&scene, r) * (1.0f / SAMPLES_COUNT);
 
-      double3 color = saturate(sum / SAMPLES_COUNT);
+      color = saturate(color);
 
       uint4 i_color = (uint4)(
         (uint)(color.x * 255),
