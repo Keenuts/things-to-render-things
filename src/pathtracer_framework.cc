@@ -28,8 +28,8 @@ namespace pathtracer
         printf("Starting %u threads working on blocks [%ux%u] px.\n",
                 MAX_THREADS_X * MAX_THREADS_Y, block_width, block_height);
 
-        for (uint32_t y = 0; y < sqrt(MAX_THREADS_Y); y++) {
-            for (uint32_t x = 0; x < sqrt(MAX_THREADS_X); x ++) {
+        for (uint32_t y = 0; y < MAX_THREADS_Y; y++) {
+            for (uint32_t x = 0; x < MAX_THREADS_X; x++) {
                 workers.emplace(
                     render_scene_chunk,
                     ctx,
@@ -60,7 +60,7 @@ namespace pathtracer
         ctx.output_frame = new uint8_t[ctx.width * ctx.height * STRIDE];
         ctx.scene = scene;
 
-#if defined(USE_OPENCL) && !defined(USD_PATHTRACER)
+#if defined(USE_OPENCL) && !defined(USE_PATHTRACER)
     #error "Only GPU pathtracer is supported."
 #else
     #if defined(USE_OPENCL)

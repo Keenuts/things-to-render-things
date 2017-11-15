@@ -191,8 +191,8 @@ namespace pathtracer
         uint32_t gdim_x = width / PX_PER_THREAD_X;
         uint32_t gdim_y = height / PX_PER_THREAD_Y;
 
-        uint32_t dim_x = 32;
-        uint32_t dim_y = 32;
+        uint32_t dim_x = LOCAL_SIZE_X;
+        uint32_t dim_y = LOCAL_SIZE_Y;
 
         printf("Opencl Dispatch: [%ux%u] [%ux%u].\n", gdim_x, gdim_y, dim_x, dim_y);
 
@@ -204,6 +204,8 @@ namespace pathtracer
                 cl::NDRange(gdim_x, gdim_y),
                 cl::NDRange(dim_x, dim_y)
             );
+            if (res != CL_SUCCESS)
+                fprintf(stderr, "Unable to invoke kernel: %d\n", res);
             assert(res == CL_SUCCESS);
 
             bool finished = false;
