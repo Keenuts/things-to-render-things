@@ -56,8 +56,8 @@ int main()
 
     white.diffuse = WHITE;
     gray.diffuse = GRAY;
-    red.diffuse = WHITE;
-    blue.diffuse = WHITE;
+    red.diffuse = RED;
+    blue.diffuse = BLUE;
     light_white.emission = WHITE;
 
     std::srand(1);

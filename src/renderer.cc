@@ -251,7 +251,7 @@ namespace RE
                 l.position = hit.position + hit.normal + D_EPSYLON;
 
                 double distance = magnitude(l.position - r.origin);
-                double factor = 1.0 / fmax(0.5, sqrt(distance));
+                double factor = 1.0 / fmax(0.0, sqrt(distance));
                 factor = 2.0;
 
                 l.mlt.emission = light->mlt.emission * hit.object->mlt.diffuse;
@@ -276,7 +276,7 @@ namespace RE
             return vec3_t(0.0, 0.0, 0.0);
 
         if (hit.object->type == object_type_e::AREA_LIGHT)
-            return hit.object->mlt.diffuse;
+            return hit.object->mlt.emission;
 
         vec3_t light = vec3_t(0, 0, 0);
 
