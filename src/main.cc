@@ -7,7 +7,7 @@
 #include "defines.hh"
 #include "helpers.hh"
 #include "renderer.hh"
-#include "pathtracer_scene.hh"
+#include "types.hh"
 #include "pathtracer_framework.hh"
 #include "vectors.hh"
 

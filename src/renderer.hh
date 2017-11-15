@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "pathtracer_scene.hh"
+#include "types.hh"
 #include "pathtracer_framework.hh"
 #include "raytracing.hh"
 

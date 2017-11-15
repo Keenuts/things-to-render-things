@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathtracer_scene.hh"
+#include "types.hh"
 #include "vectors.hh"
 
 typedef struct ray

@@ -3,7 +3,7 @@
 #include <CL/cl.hpp>
 #include <stdint.h>
 
-#include "pathtracer_scene.hh"
+#include "types.hh"
 #include "raytracing.hh"
 
 namespace pathtracer
