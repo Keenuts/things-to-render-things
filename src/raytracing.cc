@@ -41,7 +41,7 @@ uint8_t intersect_plane(ray_t r, vec3_t a, vec3_t normal, hit_t *hit)
 
     double d = dot(normal, r.direction);
 
-    if (abs(d) < 0.0001) //Ray // to tri
+    if (fabs(d) < 0.0001) //Ray // to tri
         return 0;
 
     double t = dot(a - r.origin, normal) / d;
