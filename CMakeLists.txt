@@ -3,7 +3,7 @@ project(pathtracer)
 
 set (CMAKE_C_COMPILER "clang")
 set (CMAKE_CXX_COMPILER "clang++")
-set (CMAKE_CXX_FLAGS "-std=c++17 -Wall -Werror -Wextra -pedantic -Wno-unused-parameter")
+set (CMAKE_CXX_FLAGS "-std=c++14 -Wall -Werror -Wextra -pedantic -Wno-unused-parameter")
 
 
 if (DEBUG)
