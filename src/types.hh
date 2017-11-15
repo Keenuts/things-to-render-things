@@ -5,8 +5,13 @@
 
 #include "vectors.hh"
 
-namespace pathtracer
+namespace RE
 {
+    typedef struct material {
+        vec3_t emission;
+        vec3_t diffuse;
+    } material_t;
+
     typedef enum object_type {
         SPHERE, PLANE, MESH, AREA_LIGHT
     } object_type_e;
@@ -16,7 +21,7 @@ namespace pathtracer
 
         vec3_t position;
         vec3_t rotation;
-        vec3_t color;
+        struct material mlt;
     } object_t;
 
     typedef struct light : public object_t {

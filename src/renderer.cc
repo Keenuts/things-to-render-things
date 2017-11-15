@@ -7,7 +7,7 @@
 #include "renderer.hh"
 #include "raytracing.hh"
 
-namespace pathtracer
+namespace RE
 {
     ray_t get_ray_from_camera(context_t& ctx, uint32_t x, uint32_t y)
     {
@@ -154,7 +154,7 @@ namespace pathtracer
             samples += 1;
 
             if (hit.object->type == object_type_e::AREA_LIGHT) {
-                luminance = luminance + hit.object->color * 6.0;
+                luminance = luminance + hit.object->mlt.emission * 6.0;
                 break;
             }
 
@@ -162,7 +162,7 @@ namespace pathtracer
             n_ray.direction = get_hemisphere_random(hit.normal);
             n_ray.origin = hit.position + hit.normal * D_EPSYLON;
             
-            vec3_t BRDF = hit.object->color / PI;
+            vec3_t BRDF = hit.object->mlt.diffuse / PI;
             vec3_t ir;
 
             if (bounce < MAX_DEPTH) {
@@ -187,7 +187,7 @@ namespace pathtracer
             return luminance;
 
         if (hit.object->type == object_type_e::AREA_LIGHT)
-            return hit.object->color;
+            return hit.object->mlt.emission;
 
         vec3_t light = vec3_t(0.0);
 
@@ -211,13 +211,13 @@ namespace pathtracer
                  if (h.object->type != object_type_e::AREA_LIGHT)
                      continue;
 
-                 l = l + h.object->color;
+                 l = l + h.object->mlt.diffuse;
              }
 
              light = light + (l / SOFT_SHADOW_SAMPLES);
         }
 
-        return hit.object->color * light;
+        return hit.object->mlt.diffuse * light;
     }
 
     light_t* mdt_generate_irradiance_lights(scene_t *scene, uint64_t *count)
@@ -254,9 +254,9 @@ namespace pathtracer
                 double factor = 1.0 / fmax(0.5, sqrt(distance));
                 factor = 2.0;
 
-                l.color = o->color * hit.object->color;
-                l.color = l.color * factor;
-                l.color = l.color * (1.0 / IR_RAY_PER_LIGHT);
+                l.mlt.emission = light->mlt.emission * hit.object->mlt.diffuse;
+                l.mlt.emission = l.mlt.emission * factor;
+                l.mlt.emission = l.mlt.emission * (1.0 / IR_RAY_PER_LIGHT);
 
                 lights[created] = l;
                 created++;
@@ -276,7 +276,7 @@ namespace pathtracer
             return vec3_t(0.0, 0.0, 0.0);
 
         if (hit.object->type == object_type_e::AREA_LIGHT)
-            return hit.object->color;
+            return hit.object->mlt.diffuse;
 
         vec3_t light = vec3_t(0, 0, 0);
 
@@ -296,10 +296,10 @@ namespace pathtracer
                 continue;
 
             double factor = fmax(0.0, dot(hit.normal, l_ray.direction));
-            light = light + lights[i].color * factor; 
+            light = light + lights[i].mlt.emission * factor; 
 
         }
 
-        return saturate(light) * hit.object->color;
+        return saturate(light) * hit.object->mlt.diffuse;
     }
 }

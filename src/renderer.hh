@@ -3,10 +3,10 @@
 #include <stdint.h>
 
 #include "types.hh"
-#include "pathtracer_framework.hh"
+#include "framework.hh"
 #include "raytracing.hh"
 
-namespace pathtracer
+namespace RE
 {
     ray_t get_ray_from_camera(context_t& ctx, uint32_t x, uint32_t y);
 

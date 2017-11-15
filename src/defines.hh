@@ -10,21 +10,21 @@
 
 // For CPU Rendering
 #define MAX_THREADS_X 2
-#define MAX_THREADS_Y 4
+#define MAX_THREADS_Y 2
 
 // Pathtracer setings
-#define SAMPLES_COUNT 64
-#define MAX_DEPTH 4
+#define SAMPLES_COUNT 2048
+#define MAX_DEPTH 3
 
 // For OpenCL
 #define PX_PER_THREAD_X 1
 #define PX_PER_THREAD_Y 1
-#define LOCAL_SIZE_X 8
-#define LOCAL_SIZE_Y 8
+#define LOCAL_SIZE_X 32
+#define LOCAL_SIZE_Y 32
 
 // Raytracer settings
 #define SOFT_SHADOW_SAMPLES 4
 #define SOFT_SHADOW_RADIUS 0.005
 
 // MDT settings
-#define IR_RAY_PER_LIGHT 512
+#define IR_RAY_PER_LIGHT 16

@@ -8,11 +8,11 @@
 
 #include "defines.hh"
 #include "opencl_wrapping.hh"
-#include "pathtracer_framework.hh"
+#include "framework.hh"
 #include "renderer.hh"
 #include "scoped_timer.hh"
 
-namespace pathtracer
+namespace RE
 {
     static struct kernel_object*
     convert_objects(const std::vector<object_t*>& objects)
@@ -24,7 +24,7 @@ namespace pathtracer
             list[i].type = o->type;
             list[i].position = to_float3(o->position);
             list[i].rotation = to_float3(o->rotation);
-            list[i].color = to_float3(o->color);
+            list[i].color = to_float3(o->mlt.diffuse);
 
             switch(o->type) {
                 case object_type_e::SPHERE:

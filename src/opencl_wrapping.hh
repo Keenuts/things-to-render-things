@@ -6,10 +6,10 @@
 #include <fstream>
 
 #include "defines.hh"
-#include "pathtracer_framework.hh"
+#include "framework.hh"
 #include "renderer.hh"
 
-namespace pathtracer
+namespace RE
 {
     struct kernel_info {
         cl_int samples;

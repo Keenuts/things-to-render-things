@@ -6,7 +6,7 @@
 #include "types.hh"
 #include "raytracing.hh"
 
-namespace pathtracer
+namespace RE
 {
     typedef struct context {
         uint32_t width;

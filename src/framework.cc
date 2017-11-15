@@ -5,14 +5,14 @@
 
 #include "defines.hh"
 #include "lodepng.hh"
-#include "pathtracer_framework.hh"
+#include "framework.hh"
 #include "renderer.hh"
 #include "scoped_timer.hh"
 #include "opencl_wrapping.hh"
 
 #define STRIDE 4 //(RGBA)
 
-namespace pathtracer
+namespace RE
 {
     __attribute__((unused)) // Unused if using OpenCL
     void render_cpu(context_t& ctx, uint32_t width, uint32_t height)
