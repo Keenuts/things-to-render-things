@@ -4,7 +4,7 @@
 
 #include "defines.hh"
 #include "helpers.hh"
-#include "pathtracer_renderer.hh"
+#include "renderer.hh"
 #include "raytracing.hh"
 
 namespace pathtracer
@@ -154,7 +154,7 @@ namespace pathtracer
             samples += 1;
 
             if (hit.object->type == object_type_e::AREA_LIGHT) {
-                luminance = luminance + hit.object->color;
+                luminance = luminance + hit.object->color * 6.0;
                 break;
             }
 
@@ -165,7 +165,7 @@ namespace pathtracer
             vec3_t BRDF = hit.object->color / PI;
             vec3_t ir;
 
-            if (bounce < SAMPLE_DEPTH) {
+            if (bounce < MAX_DEPTH) {
                 vec3_t ir = pathtrace(scene, n_ray, bounce + 1)
                             * dot(hit.normal, n_ray.direction);
                 sample_luminance = PI * 2.0 * BRDF * ir;
@@ -218,5 +218,88 @@ namespace pathtracer
         }
 
         return hit.object->color * light;
+    }
+
+    light_t* mdt_generate_irradiance_lights(scene_t *scene, uint64_t *count)
+    {
+        uint64_t lights_count = 0;
+        for (object_t *o : scene->objects)
+            if (o->type == object_type_e::AREA_LIGHT)
+                lights_count += 1;
+
+        printf("Creating an array of %zu lights\n", lights_count * IR_RAY_PER_LIGHT);
+
+        light_t *lights = new light_t[lights_count * IR_RAY_PER_LIGHT];
+
+        uint64_t created = 0;
+        for (object_t *o : scene->objects) {
+            if (o->type != object_type_e::AREA_LIGHT)
+                continue;
+
+            area_light_t *light = static_cast<area_light_t*>(o);
+
+            for (uint64_t i = 0; i < IR_RAY_PER_LIGHT; i++) {
+                ray_t r;
+                r.direction = get_hemisphere_random(light->normal);
+                r.origin = o->position + r.direction * 0.1;
+
+                hit_t hit;
+                if (!intersect_scene(scene, r, &hit))
+                    continue;
+
+                light_t l;
+                l.position = hit.position + hit.normal + D_EPSYLON;
+
+                double distance = magnitude(l.position - r.origin);
+                double factor = 1.0 / fmax(0.5, sqrt(distance));
+                factor = 2.0;
+
+                l.color = o->color * hit.object->color;
+                l.color = l.color * factor;
+                l.color = l.color * (1.0 / IR_RAY_PER_LIGHT);
+
+                lights[created] = l;
+                created++;
+            }
+        }
+
+        printf("Created %zu lights\n", created);
+        *count = created;
+        return lights;
+    }
+
+    vec3_t mdt(scene_t *scene, ray_t ray, light_t *lights, uint64_t l_count)
+    {
+        hit_t hit;
+
+        if (!intersect_scene(scene, ray, &hit))
+            return vec3_t(0.0, 0.0, 0.0);
+
+        if (hit.object->type == object_type_e::AREA_LIGHT)
+            return hit.object->color;
+
+        vec3_t light = vec3_t(0, 0, 0);
+
+        for (uint32_t i = 0; i < l_count; i++) {
+            hit_t l_hit;
+            ray_t l_ray;
+
+            l_ray.origin = hit.position + hit.normal * D_EPSYLON;
+            l_ray.direction = normalize(lights[i].position - l_ray.origin);
+
+            if (!intersect_scene(scene, l_ray, &l_hit))
+                continue;
+
+            vec3_t oh = l_hit.position - l_ray.origin;
+            vec3_t ol = lights[i].position - l_ray.origin;
+            if (magnitude(oh) < magnitude(ol))
+                continue;
+
+            double factor = fmax(0.0, dot(hit.normal, l_ray.direction));
+            light = light + lights[i].color * factor; 
+
+        }
+
+        return saturate(light) * hit.object->color;
     }
 }

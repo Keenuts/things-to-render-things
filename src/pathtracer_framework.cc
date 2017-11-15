@@ -6,7 +6,7 @@
 #include "defines.hh"
 #include "lodepng.hh"
 #include "pathtracer_framework.hh"
-#include "pathtracer_renderer.hh"
+#include "renderer.hh"
 #include "scoped_timer.hh"
 #include "opencl_wrapping.hh"
 
@@ -17,6 +17,10 @@ namespace pathtracer
     __attribute__((unused)) // Unused if using OpenCL
     void render_cpu(context_t& ctx, uint32_t width, uint32_t height)
     {
+#if defined(USE_MDT)
+        ctx.mdt_lights = mdt_generate_irradiance_lights(ctx.scene, &ctx.mdt_lights_count);
+#endif
+
         std::stack<std::thread> workers;
         uint32_t block_width = height / MAX_THREADS_X;
         uint32_t block_height = width / MAX_THREADS_Y;
@@ -56,8 +60,8 @@ namespace pathtracer
         ctx.output_frame = new uint8_t[ctx.width * ctx.height * STRIDE];
         ctx.scene = scene;
 
-#if defined(USE_RAYTRACER) && defined(USE_OPENCL)
-    #error "GPU Raytracer not supported. Raytracer only used for debug purposes"
+#if defined(USE_OPENCL) && !defined(USD_PATHTRACER)
+    #error "Only GPU pathtracer is supported."
 #else
     #if defined(USE_OPENCL)
         pathtracer_gpu(ctx, width, height);
@@ -87,8 +91,12 @@ namespace pathtracer
                 ray_t r = get_ray_from_camera(ctx, start_x + x, start_y + y);
 #if defined(USE_RAYTRACER)
                 vec3_t color = raytrace(ctx.scene, r, 0);
-#else
+#elif defined(USE_PATHTRACER)
                 vec3_t color = pathtrace(ctx.scene, r, 0);
+#elif defined(USE_MDT)
+                vec3_t color = mdt(ctx.scene, r, ctx.mdt_lights, ctx.mdt_lights_count);
+#else
+    #error "No rendering method selected"
 #endif
 
                 out[(size_x * y + x) * STRIDE + 0] = color.r * 255.0;
@@ -100,7 +108,9 @@ namespace pathtracer
 
         for (uint32_t y = 0; y < size_y; y++) {
             uint32_t offset = (start_y + y) * ctx.width + start_x;
-            memcpy(ctx.output_frame + offset * STRIDE, out + y * size_x * STRIDE, size_x * STRIDE); 
+            memcpy(ctx.output_frame + offset * STRIDE,
+                   out + y * size_x * STRIDE,
+                   size_x * STRIDE); 
         }
 
         delete[] out;

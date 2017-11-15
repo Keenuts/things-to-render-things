@@ -6,7 +6,7 @@
 
 #include "defines.hh"
 #include "helpers.hh"
-#include "pathtracer_renderer.hh"
+#include "renderer.hh"
 #include "pathtracer_scene.hh"
 #include "pathtracer_framework.hh"
 #include "vectors.hh"
@@ -63,7 +63,7 @@ int main()
     scene.camera_direction = vec3_t(0, 0, 1);
     scene.objects = std::vector<pathtracer::object_t*>(0);
 
-    auto sphere_front = create_sphere(vec3_t(2, -3.2, 1), 1.5f, WHITE);
+    auto sphere_front = create_sphere(vec3_t(2, -3.5, 1), 1.5f, WHITE);
     auto sphere_back  = create_sphere(vec3_t(-2.5, -3.5, 8.5), 1.5f, WHITE);
 
     auto floor = create_plane(vec3_t(0, -5, 0), vec3_t(0, 1, 0), GRAY);

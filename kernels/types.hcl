@@ -34,6 +34,8 @@ typedef struct hit {
 } hit_t;
 
 struct kernel_info {
+    int samples;
+    int depth;
     int block_width;
     int block_height;
     int width;

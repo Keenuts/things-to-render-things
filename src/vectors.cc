@@ -150,7 +150,7 @@ static inline double rand_0_1()
     return n;
 }
 
-vec3_t get_hemisphere_random(vec3_t dir)
+vec3_t get_sphere_random(void)
 {
     double x, y, z;
     double m;
@@ -162,10 +162,14 @@ vec3_t get_hemisphere_random(vec3_t dir)
         m = magnitude(vec3_t(x, y, z));
     } while (m > 1.0);
 
-    vec3_t d = normalize(vec3_t(x, y, z));
+    return normalize(vec3_t(x, y, z));
+}
+
+vec3_t get_hemisphere_random(vec3_t dir)
+{
+    vec3_t d = get_sphere_random();
     if (dot(d, dir) < 0.0)
         d = -d;
-
     return d;
 }
 

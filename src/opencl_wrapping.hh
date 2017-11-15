@@ -7,11 +7,13 @@
 
 #include "defines.hh"
 #include "pathtracer_framework.hh"
-#include "pathtracer_renderer.hh"
+#include "renderer.hh"
 
 namespace pathtracer
 {
     struct kernel_info {
+        cl_int samples;
+        cl_int depth;
         cl_int block_width;
         cl_int block_height;
         cl_int width;

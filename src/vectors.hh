@@ -51,6 +51,7 @@ vec3_t reflect(vec3_t i, vec3_t n);
 vec3_t saturate(vec3_t c);
 
 vec3_t rotate(vec3_t in, vec3_t angles);
+vec3_t get_sphere_random(void);
 vec3_t get_hemisphere_random(vec3_t dir);
 
 cl_float3 to_float3(vec3_t v);

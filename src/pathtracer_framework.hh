@@ -18,6 +18,8 @@ namespace pathtracer
         cl::Platform platform;
         cl::Program kernel;
         scene_t *scene;
+        light_t *mdt_lights;
+        uint64_t mdt_lights_count;
     } context_t;
 
 

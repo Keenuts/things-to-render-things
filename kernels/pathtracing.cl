@@ -2,9 +2,6 @@
 #include "helpers.hcl"
 #include "raytracing.hcl"
 
-#define SAMPLES_COUNT 1024
-#define SAMPLE_DEPTH 4
-
 __constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE
                              | CLK_ADDRESS_CLAMP_TO_EDGE
                              | CLK_FILTER_NEAREST;
@@ -87,12 +84,12 @@ static bool intersect_scene(scene_t *scene, ray_t ray, hit_t *out)
 
 #define BLACK (float3)(0.0f, 0.0f, 0.0f)
 
-static float3 render_ray(scene_t *scene, ray_t ray)
+static float3 render_ray(scene_t *scene, ray_t ray, int max_depth)
 {
     float3 mask = (float3)(1.0f, 1.0f, 1.0f);
     float3 color = (float3)(0.0f, 0.0f, 0.0f);
 
-    for (uint i = 0; i < SAMPLE_DEPTH; i++) {
+    for (uint i = 0; i < max_depth; i++) {
         hit_t hit;
 
         if (!intersect_scene(scene, ray, &hit)) {
@@ -150,8 +147,8 @@ __kernel void pathtracer(
 
       float3 color = (float3)(0, 0, 0);
 
-      for (uint i = 0; i < SAMPLES_COUNT; i++)
-        color += render_ray(&scene, r) * (1.0f / SAMPLES_COUNT);
+      for (uint i = 0; i < info.samples; i++)
+        color += render_ray(&scene, r, info.depth) * (1.0f / info.samples);
 
       color = saturate(color);
 

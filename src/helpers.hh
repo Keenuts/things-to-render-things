@@ -1,6 +1,7 @@
 #pragma once
 
 #define D_EPSYLON 0.00001
+#define F_EPSYLON 0.00001f
 #define PI 3.14159265358979323846
 #define DEG2RAD(x) ((x) * ((PI * 2.0) / 360.0))
 

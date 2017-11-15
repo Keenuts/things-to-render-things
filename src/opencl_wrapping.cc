@@ -9,7 +9,7 @@
 #include "defines.hh"
 #include "opencl_wrapping.hh"
 #include "pathtracer_framework.hh"
-#include "pathtracer_renderer.hh"
+#include "renderer.hh"
 #include "scoped_timer.hh"
 
 namespace pathtracer
@@ -136,6 +136,8 @@ namespace pathtracer
         delete[] k_objects;
         delete[] k_vertex;
 
+        p.info.samples = SAMPLES_COUNT;
+        p.info.depth = MAX_DEPTH;
         p.info.block_width  = PX_PER_THREAD_X;
         p.info.block_height = PX_PER_THREAD_Y;
         p.info.width = width;
