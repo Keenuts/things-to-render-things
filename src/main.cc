@@ -5,11 +5,12 @@
 #include <vector>
 
 #include "defines.hh"
+#include "framework.hh"
 #include "helpers.hh"
 #include "renderer.hh"
 #include "types.hh"
-#include "framework.hh"
 #include "vectors.hh"
+#include "viewer.hh"
 
 static RE::object_plane_t create_plane(vec3_t pt, vec3_t normal, RE::material_t mlt)
 {
@@ -102,6 +103,7 @@ int main()
     (void)wall_back;
     (void)light;
 
+    //RE::initialize_viewport();
     RE::render_scene(&scene, WIDTH, HEIGHT);
 
     return 0;
