@@ -9,8 +9,7 @@
 #define HEIGHT 512
 
 // For CPU Rendering
-#define MAX_THREADS_X 2
-#define MAX_THREADS_Y 2
+#define MAX_THREADS 4
 
 // Pathtracer setings
 #define SAMPLES_COUNT 2048
