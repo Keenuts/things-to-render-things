@@ -12,10 +12,11 @@ namespace RE
 
         uint32_t width, height;
         bool *should_close;
-        uint8_t *image;
+        uint8_t *output_frame;
 
         SDL_Renderer *renderer;
         SDL_Window *window;
+        SDL_Texture *texture;
         std::thread *gui_thread;
     };
 

@@ -20,5 +20,5 @@
 #define SOFT_SHADOW_RADIUS 0.005
 
 // MDT settings
-#define IR_RAY_PER_LIGHT 16
+#define IR_RAY_PER_LIGHT 64
 #define STRIDE 4 //(RGBA)

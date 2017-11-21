@@ -5,6 +5,7 @@
 #include <vector>
 #include <thread>
 #include <SDL2/SDL.h>
+#include <signal.h>
 
 #include "defines.hh"
 #include "framework.hh"
@@ -15,9 +16,22 @@
 
 namespace RE
 {
-    static void main_loop(struct viewer_state state)
+    static void main_loop(struct viewer_state& state)
     {
-        while (!*state.should_close) {
+        while (!*state.should_close && !SDL_QuitRequested()) {
+            void *data;
+            int pitch;
+
+            SDL_LockTexture(state.texture, NULL, &data, &pitch);
+
+            memcpy(data, state.output_frame, state.width * state.height * STRIDE);
+
+            SDL_UnlockTexture(state.texture);
+
+            SDL_RenderClear(state.renderer);
+            SDL_RenderCopy(state.renderer, state.texture, NULL, NULL);
+            SDL_RenderPresent(state.renderer);
+
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
 
@@ -26,8 +40,6 @@ namespace RE
 
     struct viewer_state initialize_viewport(struct renderer_info info)
     {
-        SDL_Renderer *renderer;
-        SDL_Window *window;
         struct viewer_state state;
 
         memset(&state, 0, sizeof(state));
@@ -35,11 +47,17 @@ namespace RE
         state.should_close = new bool;
         state.width = info.width;
         state.height = info.height;
-        state.image = info.output_frame;
+        state.output_frame = info.output_frame;
 
-        SDL_Init(SDL_INIT_VIDEO);
-        SDL_CreateWindowAndRenderer(512, 512, 0, &window, &renderer);
-        state.gui_thread = new std::thread(main_loop, state);
+        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE);
+        signal(SIGINT, SIG_DFL);
+        SDL_CreateWindowAndRenderer(512, 512, 0, &state.window, &state.renderer);
+
+        state.texture = SDL_CreateTexture(state.renderer, SDL_PIXELFORMAT_RGBA32,
+                          SDL_TEXTUREACCESS_STREAMING,
+                          info.width, info.height);
+
+        state.gui_thread = new std::thread(main_loop, std::ref(state));
 
         return state;
     }
