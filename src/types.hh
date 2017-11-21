@@ -62,4 +62,47 @@ namespace RE
         std::vector<object_t*> objects;
         std::vector<light_t*> lights;
     } scene_t;
+
+    struct kernel_info {
+        int samples;
+        int depth;
+
+        int offset_x;
+        int offset_y;
+        int stride;
+        int width;
+        int height;
+
+        cl_float3 camera_position;
+        cl_float3 camera_direction;
+        cl_float3 camera_up;
+        cl_float3 camera_right;
+
+        ulong object_count;
+        ulong vtx_count;
+    };
+
+    struct kernel_material {
+        cl_float3 diffuse;
+        cl_float3 emission;
+    };
+
+    struct kernel_object {
+        object_type_e type;
+        cl_float3 position;
+        cl_float3 rotation;
+        struct kernel_material mlt;
+
+        float radius;
+        cl_float3 size;
+        cl_float3 normal;
+        ulong vtx_index;
+        ulong vtx_count;
+    };
+
+    struct kernel_parameters {
+        struct kernel_info info;
+        cl_mem objects;
+        cl_mem vertex;
+    };
 }

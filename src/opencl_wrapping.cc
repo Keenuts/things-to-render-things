@@ -14,6 +14,7 @@
 
 namespace RE
 {
+#if 0
     static struct kernel_object*
     convert_objects(const std::vector<object_t*>& objects)
     {
@@ -233,4 +234,5 @@ namespace RE
         );
         printf("Rendering done in %.2lf seconds.\n", elapsed);
     }
+#endif
 }

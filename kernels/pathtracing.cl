@@ -3,38 +3,13 @@
 #include "raytracing.hcl"
 
 __constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE
-                             | CLK_ADDRESS_CLAMP_TO_EDGE
-                             | CLK_FILTER_NEAREST;
+| CLK_ADDRESS_CLAMP_TO_EDGE
+| CLK_FILTER_NEAREST;
 
 static inline
 bool intersect_with_plane(object_t o, ray_t r, hit_t *out)
 {
     return intersect_plane(r, o.position, rotation(o.normal, o.rotation), out);
-}
-
-static inline
-bool intersect_with_area_light(object_t o, ray_t r, hit_t *out)
-{
-    hit_t hit;
-
-    float3 vt = rotation(o.size, o.rotation);
-    float3 a = (float3)(-vt.x * 0.5f, 0.0f, -vt.z * 0.5f);
-    float3 b = (float3)(-vt.x * 0.5f, 0.0f,  vt.z * 0.5f);
-    float3 c = (float3)( vt.x * 0.5f, 0.0f,  vt.z * 0.5f);
-    float3 d = (float3)( vt.x * 0.5f, 0.0f, -vt.z * 0.5f);
-
-    a = a + o.position;
-    b = b + o.position;
-    c = c + o.position;
-    d = d + o.position;
-
-    if (intersect_tri(r, a, d, c, out))
-        return true;
-
-    if (intersect_tri(r, a, c, b, out))
-        return true;
-
-    return false;
 }
 
 static bool intersect_scene(scene_t *scene, ray_t ray, hit_t *out)
@@ -118,48 +93,46 @@ static float3 render_ray(scene_t *scene, ray_t ray, int max_depth)
 #undef BLACK
 
 __kernel void pathtracer(
-  struct kernel_info info,
-  __global object_t *objects,
-  __global float3 *vertex,
-  __write_only image2d_t output
-)
+    global uchar *output, 
+    struct kernel_info info,
+    __global object_t *objects,
+    __global float3 *vertex)
 {
-  const int2 pos = (int2)(
-        get_group_id(0) * get_local_size(0) + get_local_id(0) * info.block_width,
-        get_group_id(1) * get_local_size(1) + get_local_id(1) * info.block_height
-  );
+    int x = info.offset_x + get_global_id(0);
+    int y = info.offset_y + get_global_id(1);
 
-  scene_t scene;
-  scene.camera_position  = info.camera_position;
-  scene.camera_direction = info.camera_direction;
-  scene.camera_up        = info.camera_up;
-  scene.camera_right     = info.camera_up;
-  scene.object_count     = info.object_count;
+    int id = (x + y * info.width) * info.stride;
 
-  scene.objects = objects;
 
-  for (int y = 0; y < info.block_height; y++) {
-    for (int x = 0; x < info.block_width; x++) {
-      int2 local_pos = (int2)(pos.x + x, pos.y + y);
+    scene_t scene;
+    scene.camera_position  = info.camera_position;
+    scene.camera_direction = info.camera_direction;
+    scene.camera_up        = info.camera_up;
+    scene.camera_right     = info.camera_up;
+    scene.object_count     = info.object_count;
 
-      int2 resolution = (int2)(info.width, info.height);
-      ray_t r = compute_ray(scene, resolution, local_pos);
+    scene.objects = objects;
 
-      float3 color = (float3)(0, 0, 0);
+    int2 resolution = (int2)(info.width, info.height);
+    ray_t r = compute_ray(scene, resolution, (int2)(x, y));
 
-      for (uint i = 0; i < info.samples; i++)
+    float3 color = (float3)(0, 0, 0);
+
+    for (uint i = 0; i < info.samples; i++) {
         color += render_ray(&scene, r, info.depth) * (1.0f / info.samples);
 
-      color = saturate(color);
+        color = saturate(color);
 
-      uint4 i_color = (uint4)(
-        (uint)(color.x * 255),
-        (uint)(color.y * 255),
-        (uint)(color.z * 255),
-        255
-      );
+        uint4 i_color = (uint4)(
+                (uint)(color.x * 255),
+                (uint)(color.y * 255),
+                (uint)(color.z * 255),
+                255
+                );
 
-      write_imageui(output, local_pos, i_color);
+        output[id + 0] = i_color.x;
+        output[id + 1] = i_color.y;
+        output[id + 2] = i_color.z;
+        output[id + 3] = 255;
     }
-  }
 }

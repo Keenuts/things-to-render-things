@@ -9,11 +9,11 @@
 
 namespace RE
 {
-    ray_t get_ray_from_camera(context_t& ctx, uint32_t x, uint32_t y)
+    ray_t get_ray_from_camera(struct renderer_info& i, uint32_t x, uint32_t y)
     {
-        scene_t *scene = ctx.scene;
-        double width = ctx.width;
-        double height = ctx.height;
+        scene_t *scene = i.scene;
+        double width = i.width;
+        double height = i.height;
         const double FOV = 45.0;
 
         double L = width / (tan(DEG2RAD(FOV / 2.0)) * 2.0);

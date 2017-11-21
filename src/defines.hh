@@ -28,3 +28,8 @@
 
 // MDT settings
 #define IR_RAY_PER_LIGHT 64
+
+#define KERNEL_PATH "../kernels/rendering.cl"
+#define KERNEL_NAME "raytracer"
+#define STRIDE 4 //(RGBA)
+

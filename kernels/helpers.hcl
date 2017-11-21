@@ -1,5 +1,3 @@
-#pragma once
-
 #define GEN_SWAP(Type)        \
 static inline                 \
 void swap(Type *a, Type *b) { \
@@ -72,7 +70,7 @@ static float rand_0_1(scene_t *scene)
     return (float)rand(scene) / (float)RAND_MAX;
 }
 
-float3 get_hemisphere_random(scene_t *scene, float3 dir)
+static float3 get_hemisphere_random(scene_t *scene, float3 dir)
 {
     float x, y, z;
     float m;

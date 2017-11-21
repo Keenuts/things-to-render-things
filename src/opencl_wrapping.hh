@@ -11,6 +11,7 @@
 
 namespace RE
 {
+#if 0
     struct kernel_info {
         cl_int samples;
         cl_int depth;
@@ -49,4 +50,5 @@ namespace RE
     };
 
     void pathtracer_gpu(context_t& ctx, uint32_t width, uint32_t height);
+#endif
 }

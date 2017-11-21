@@ -1,9 +1,19 @@
-__kernel void my_memset(global uchar *output)
-{
-    int id = (get_global_id(0) + get_global_id(1) * 512) * 4;
+#include "types.hcl"
 
-    output[id + 0] = 255;
-    output[id + 1] = 0;
+__kernel void my_memset(
+    global uchar *output, 
+    struct kernel_info info,
+    __global object_t *objects,
+    __global float3 *vertex
+)
+{
+    int x = info.offset_x + get_global_id(0);
+    int y = info.offset_y + get_global_id(1);
+
+    int id = (x + y * info.width) * info.stride;
+
+    output[id + 0] = (x / (float)info.width) * 255.0;
+    output[id + 1] = (y / (float)info.height) * 255.0;
     output[id + 2] = 0;
-    output[id + 3] = 252;
+    output[id + 3] = 255;
 }

@@ -1,17 +1,20 @@
-#pragma once
-
 /* Object related definitions */
 
 typedef enum object_type {
     SPHERE, PLANE, MESH, AREA_LIGHT
 } object_type_e;
 
+struct material {
+    float3 diffuse;
+    float3 emissive;
+};
+
 typedef struct object {
     object_type_e type;
 
     float3 position;
     float3 rotation;
-    float3 color;
+    struct material mlt;
 
     float radius;
     float3 size;
@@ -36,8 +39,10 @@ typedef struct hit {
 struct kernel_info {
     int samples;
     int depth;
-    int block_width;
-    int block_height;
+
+    int offset_x;
+    int offset_y;
+    int stride;
     int width;
     int height;
 
