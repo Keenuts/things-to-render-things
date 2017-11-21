@@ -211,10 +211,10 @@ namespace RE
                  if (h.object->type != object_type_e::AREA_LIGHT)
                      continue;
 
-                 l = l + h.object->mlt.diffuse;
+                 l = l + h.object->mlt.emission * (1.0 / SOFT_SHADOW_SAMPLES);
              }
 
-             light = light + (l / SOFT_SHADOW_SAMPLES);
+             light = light + l;
         }
 
         return hit.object->mlt.diffuse * light;
