@@ -51,7 +51,8 @@ namespace RE
 
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE);
         signal(SIGINT, SIG_DFL);
-        SDL_CreateWindowAndRenderer(512, 512, 0, &state.window, &state.renderer);
+        SDL_CreateWindowAndRenderer(info.width, info.height,
+                                    0, &state.window, &state.renderer);
 
         state.texture = SDL_CreateTexture(state.renderer, SDL_PIXELFORMAT_RGBA32,
                           SDL_TEXTUREACCESS_STREAMING,

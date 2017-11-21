@@ -124,6 +124,27 @@ double& vec3_t::operator[](int i)
 
 }
 
+void vec3_t::operator*=(double a)
+{
+    *this = *this * a;
+}
+
+void vec3_t::operator*=(vec3_t v)
+{
+    *this = *this * v;
+}
+
+void vec3_t::operator+=(vec3_t v)
+{
+    *this = *this + v;
+}
+
+void vec3_t::operator-=(vec3_t v)
+{
+    *this = *this - v;
+}
+
+
 vec3_t rotate(vec3_t in, vec3_t angles)
 {
     mat3_t x_rot(0.0), y_rot(0.0), z_rot(0.0);
@@ -171,9 +192,4 @@ vec3_t get_hemisphere_random(vec3_t dir)
     if (dot(d, dir) < 0.0)
         d = -d;
     return d;
-}
-
-cl_float3 to_float3(vec3_t v)
-{
-    return { { (float)v.x, (float)v.y, (float)v.z, 0.0f } };
 }

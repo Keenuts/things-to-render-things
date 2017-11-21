@@ -51,11 +51,12 @@ namespace RE
     typedef struct area_light : public light_t {
         vec3_t size;
         vec3_t normal;
+        float power;
     } area_light_t;
 
     // Scene
 
-    typedef struct scene {
+    typedef struct {
         vec3_t camera_position;
         vec3_t camera_direction;
 
@@ -65,4 +66,8 @@ namespace RE
         light_t *mdt_lights;
         uint64_t mdt_light_count;
     } scene_t;
+
+    struct area {
+        uint32_t x, y, w, h;
+    };
 }

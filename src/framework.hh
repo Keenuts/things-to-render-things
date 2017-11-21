@@ -1,8 +1,6 @@
 #pragma once
 
-#include <CL/cl.h>
 #include <stdint.h>
-
 #include "types.hh"
 #include "raytracing.hh"
 
@@ -16,5 +14,6 @@ namespace RE
     };
 
 
-    void render_scene(scene_t *scene, uint32_t width, uint32_t height);
+    void render_scene(scene_t *scene, uint32_t width, uint32_t height,
+                      struct area *render_area);
 }

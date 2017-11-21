@@ -35,23 +35,23 @@ static RE::object_sphere_t create_sphere(vec3_t center, float rad, RE::material_
 }
 
 static RE::area_light_t create_area_light(vec3_t pos, RE::material_t mlt,
-                                      double width, double length)
+                                      float power, float width, float length)
 {
     RE::area_light_t l;
     l.type = RE::object_type_e::AREA_LIGHT;
     l.position = pos;
     l.mlt = mlt;
-    l.size = vec3_t(width, 0.0, length);
+    l.size = vec3_t(width, 0.0f, length);
+    l.power = power;
 
     return l;
 }
 
 int main()
 {
-#define WHITE vec3_t(0.95, 0.95, 0.95)
-#define RED vec3_t(0.98, 0.2, 0.0)
-#define BLUE vec3_t(0.2, 0.65, 0.98)
-#define GRAY vec3_t(0.8, 0.8, 0.8)
+#define RED vec3_t(0.98f,   0.2f, 0.0f)
+#define BLUE vec3_t(0.2f,   0.65f, 0.98f)
+#define GRAY vec3_t(0.8f,   0.8f, 0.8f)
 
     RE::material_t gray, white, red, blue, light_white;
 
@@ -81,7 +81,7 @@ int main()
     auto wall_left = create_plane(vec3_t(-5, 0, 0), vec3_t(1, 0, 0), red);
     auto roof = create_plane(vec3_t(0, 5, 0), vec3_t(0, -1, 0), gray);
 
-    auto light = create_area_light(vec3_t(0.0, 4.9, 1.0), light_white, 6, 6);
+    auto light = create_area_light(vec3_t(0.0, 4.9, 1.0), light_white, 3.0, 6, 6);
 
     scene.objects.push_back(&sphere_front);
     scene.objects.push_back(&sphere_back);
@@ -103,8 +103,13 @@ int main()
     (void)wall_back;
     (void)light;
 
-    //RE::initialize_viewport();
-    RE::render_scene(&scene, WIDTH, HEIGHT);
+#if 0
+    struct RE::area render_area = { 350, 350, 16, 128 };
+    RE::render_scene(&scene, WIDTH, HEIGHT, &render_area);
+#else
+    RE::render_scene(&scene, WIDTH, HEIGHT, nullptr);
+#endif
+
 
     return 0;
 }

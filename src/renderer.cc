@@ -140,44 +140,6 @@ namespace RE
         return touch;
     }
 
-    vec3_t pathtrace(scene_t *scene, ray_t ray, uint32_t bounce)
-    {
-        vec3_t luminance(0.0, 0.0, 0.0);
-        uint32_t samples = 1;
-
-        for (uint32_t i = 0; i < SAMPLES_COUNT; i++) {
-            hit_t hit;
-            vec3_t sample_luminance;
-
-            if (!intersect_scene(scene, ray, &hit))
-                continue;
-            samples += 1;
-
-            if (hit.object->type == object_type_e::AREA_LIGHT) {
-                luminance = luminance + hit.object->mlt.emission * 6.0;
-                break;
-            }
-
-            ray_t n_ray;
-            n_ray.direction = get_hemisphere_random(hit.normal);
-            n_ray.origin = hit.position + hit.normal * D_EPSYLON;
-            
-            vec3_t BRDF = hit.object->mlt.diffuse / PI;
-            vec3_t ir;
-
-            if (bounce < MAX_DEPTH) {
-                vec3_t ir = pathtrace(scene, n_ray, bounce + 1)
-                            * dot(hit.normal, n_ray.direction);
-                sample_luminance = PI * 2.0 * BRDF * ir;
-            }
-            else
-                sample_luminance = BRDF;
-            luminance = luminance + sample_luminance;
-        }
-
-        return saturate(luminance / samples);
-    }
-
     vec3_t raytrace(scene_t *scene, ray_t ray, uint32_t bounce)
     {
         vec3_t luminance(0.1, 0.1, 0.1);
@@ -218,6 +180,39 @@ namespace RE
         }
 
         return hit.object->mlt.diffuse * light;
+    }
+
+    vec3_t pathtrace(scene_t *scene, ray_t ray, uint32_t bounce)
+    {
+        vec3_t mask = WHITE;
+        vec3_t color = BLACK;
+
+        for (uint32_t i = 0; i < PT_MAX_DEPTH; i++) {
+            hit_t hit;
+
+            if (!intersect_scene(scene, ray, &hit)) {
+                color = BLACK;
+                break;
+            }
+
+            if (hit.object->type == object_type_e::AREA_LIGHT) {
+                area_light_t *l = static_cast<area_light_t*>(hit.object);
+                color += mask * l->mlt.emission * l->power;
+                break;
+            }
+
+            vec3_t nl = hit.normal;
+            nl *= dot(hit.normal, ray.direction) < 0 ? 1.0 : -1.0;
+
+            ray.direction = get_hemisphere_random(hit.normal);
+            ray.origin = hit.position + hit.normal * D_EPSYLON;
+
+            mask *= hit.object->mlt.diffuse;
+            mask *= dot(ray.direction, nl);
+            mask *= 2.0;
+        }
+
+        return color;
     }
 
     light_t* mdt_generate_irradiance_lights(scene_t *scene, uint64_t *count)
