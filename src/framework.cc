@@ -60,8 +60,6 @@ namespace RE
                 i.output_frame[(x + j.y * i.width) * STRIDE + 2] = px.b * 255.0;
                 i.output_frame[(x + j.y * i.width) * STRIDE + 3] = 255;
             }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 
