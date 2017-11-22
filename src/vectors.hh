@@ -6,25 +6,25 @@
 
 typedef struct vec3 {
     union {
-        double x;
-        double r;
+        float x;
+        float r;
     };
     union {
-        double y;
-        double g;
+        float y;
+        float g;
     };
     union {
-        double z;
-        double b;
+        float z;
+        float b;
     };
 
-    vec3(double x = 0, double y = 0, double z = 0)
+    vec3(float x = 0, float y = 0, float z = 0)
         : x(x), y(y), z(z)
     { }
 
-    double& operator[](int i);
+    float& operator[](int i);
 
-    void operator*=(double a);
+    void operator*=(float a);
     void operator*=(struct vec3 v);
     void operator+=(struct vec3 v);
     void operator-=(struct vec3 v);
@@ -41,15 +41,15 @@ typedef struct vec3 {
 vec3_t operator+(vec3_t a, vec3_t b);
 vec3_t operator-(vec3_t a);
 vec3_t operator-(vec3_t a, vec3_t b);
-vec3_t operator*(vec3_t a, double b);
-vec3_t operator*(double a, vec3_t b);
-vec3_t operator/(double a, vec3_t b);
-vec3_t operator/(vec3_t a, double b);
+vec3_t operator*(vec3_t a, float b);
+vec3_t operator*(float a, vec3_t b);
+vec3_t operator/(float a, vec3_t b);
+vec3_t operator/(vec3_t a, float b);
 vec3_t operator*(vec3_t a, vec3_t b);
 
-double dot(vec3_t a, vec3_t b);
+float dot(vec3_t a, vec3_t b);
 vec3_t cross(vec3_t a, vec3_t b);
-double magnitude(vec3_t v);
+float magnitude(vec3_t v);
 vec3_t normalize(vec3_t v);
 std::string to_string(vec3_t v);
 

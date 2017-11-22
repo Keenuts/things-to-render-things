@@ -5,22 +5,22 @@
 
 namespace RE
 {
-    uint8_t intersect_sphere(ray_t r, vec3_t center, double rad, hit_t *hit)
+    uint8_t intersect_sphere(ray_t r, vec3_t center, float rad, hit_t *hit)
     {
         r.direction = normalize(r.direction);
         vec3_t e0 = center - r.origin;
 
-        double v = dot(e0, r.direction);
-        double d2 = dot(e0, e0) - v * v;
-        double rad2 = rad * rad;
+        float v = dot(e0, r.direction);
+        float d2 = dot(e0, e0) - v * v;
+        float rad2 = rad * rad;
 
         if (d2 > rad2)
             return 0;
 
-        double d = sqrt(rad2 - d2);
+        float d = sqrt(rad2 - d2);
 
-        double t0 = v - d;
-        double t1 = v + d;
+        float t0 = v - d;
+        float t1 = v + d;
 
         if (t0 > t1)
             std::swap(t0, t1);
@@ -41,12 +41,12 @@ namespace RE
     {
         r.direction = normalize(r.direction);
 
-        double d = dot(normal, r.direction);
+        float d = dot(normal, r.direction);
 
         if (fabs(d) < 0.0001) //Ray // to tri
             return 0;
 
-        double t = dot(a - r.origin, normal) / d;
+        float t = dot(a - r.origin, normal) / d;
         if (t < 0) //Tri behind our ray
             return 0;
 

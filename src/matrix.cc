@@ -9,7 +9,7 @@ mat3_t::mat3(vec3_t values[3])
         lines[i] = values[i];
 }
 
-mat3_t::mat3(double v)
+mat3_t::mat3(float v)
 {
     for (uint32_t i = 0; i < 3; i++)
         lines[i] = vec3_t(v, v, v);

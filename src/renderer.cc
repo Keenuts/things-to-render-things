@@ -12,15 +12,15 @@ namespace RE
     ray_t get_ray_from_camera(struct renderer_info& i, uint32_t x, uint32_t y)
     {
         scene_t *scene = i.scene;
-        double width = i.width;
-        double height = i.height;
-        const double FOV = 45.0;
+        float width = i.width;
+        float height = i.height;
+        const float FOV = 45.0;
 
-        double L = width / (tan(DEG2RAD(FOV / 2.0)) * 2.0);
+        float L = width / (tan(DEG2RAD(FOV / 2.0)) * 2.0);
 
         vec3_t middle = scene->camera_position + scene->camera_direction * L;
-        double s_width = lerp(-width, width, x / width) / 2.0;
-        double s_height = lerp(-height, height, y / height) / 2.0;
+        float s_width = lerp(-width, width, x / width) / 2.0;
+        float s_height = lerp(-height, height, y / height) / 2.0;
 
         vec3_t screen_ptr = VECTOR_RIGHT * s_width
                       - VECTOR_UP * s_height
@@ -46,7 +46,7 @@ namespace RE
     {
         hit_t hit;
         bool touch = false;
-        double depth = std::numeric_limits<double>::infinity();
+        float depth = std::numeric_limits<float>::infinity();
 
         assert(o->vtx_count % 3 == 0 && "Invalid vtx count. Must be multiple of 3");
 
@@ -61,7 +61,7 @@ namespace RE
                 continue;
 
             touch = true;
-            double local_depth = magnitude(local_hit.position - r.origin);
+            float local_depth = magnitude(local_hit.position - r.origin);
             if (local_depth < depth) {
                 hit = local_hit;
                 depth = local_depth;
@@ -99,7 +99,7 @@ namespace RE
     static bool intersect_scene(scene_t *scene, ray_t ray, hit_t *out)
     {
         hit_t hit;
-        double depth = std::numeric_limits<double>::infinity();
+        float depth = std::numeric_limits<float>::infinity();
         bool touch = false;
 
         for (object_t *o : scene->objects) {
@@ -127,7 +127,7 @@ namespace RE
                 continue;
             touch = true;
 
-            double tmp_depth = magnitude(local_hit.position - ray.origin);
+            float tmp_depth = magnitude(local_hit.position - ray.origin);
 
             if (tmp_depth < depth) {
                 hit = local_hit;
@@ -151,6 +151,7 @@ namespace RE
         if (hit.object->type == object_type_e::AREA_LIGHT)
             return hit.object->mlt.emission;
 
+#if defined(RT_ENABLE_SHADOWS)
         vec3_t light = vec3_t(0.0);
 
         for (object_t *o : scene->objects) {
@@ -158,14 +159,13 @@ namespace RE
                 continue;
 
              vec3_t l = vec3_t(0.0);
-
-             for (uint32_t i = 0; i < SOFT_SHADOW_SAMPLES; i++) {
+             for (uint32_t i = 0; i < RT_SOFT_SHADOW_SAMPLES; i++) {
                  ray_t r;
-                 r.origin = hit.position + hit.normal * D_EPSYLON;
+                 r.origin = hit.position + hit.normal * F_EPSYLON;
                  vec3_t d1 = normalize(o->position - hit.position);
                  vec3_t d2 = get_hemisphere_random(hit.normal);
 
-                 r.direction = lerp(d1, d2, SOFT_SHADOW_RADIUS);
+                 r.direction = lerp(d1, d2, RT_SOFT_SHADOW_RADIUS);
                  hit_t h;
 
                  if (!intersect_scene(scene, r, &h))
@@ -173,13 +173,14 @@ namespace RE
                  if (h.object->type != object_type_e::AREA_LIGHT)
                      continue;
 
-                 l = l + h.object->mlt.emission * (1.0 / SOFT_SHADOW_SAMPLES);
+                 l = l + h.object->mlt.emission * (1.0f / RT_SOFT_SHADOW_SAMPLES);
              }
-
              light = light + l;
         }
-
         return hit.object->mlt.diffuse * light;
+#else
+        return hit.object->mlt.diffuse;
+#endif
     }
 
     vec3_t pathtrace(scene_t *scene, ray_t ray, uint32_t bounce)
@@ -202,14 +203,14 @@ namespace RE
             }
 
             vec3_t nl = hit.normal;
-            nl *= dot(hit.normal, ray.direction) < 0 ? 1.0 : -1.0;
+            nl *= dot(hit.normal, ray.direction) < 0 ? 1.0f : -1.0f;
 
             ray.direction = get_hemisphere_random(hit.normal);
-            ray.origin = hit.position + hit.normal * D_EPSYLON;
+            ray.origin = hit.position + hit.normal * F_EPSYLON;
 
             mask *= hit.object->mlt.diffuse;
             mask *= dot(ray.direction, nl);
-            mask *= 2.0;
+            mask *= 2.0f;
         }
 
         return color;
@@ -243,15 +244,15 @@ namespace RE
                     continue;
 
                 light_t l;
-                l.position = hit.position + hit.normal + D_EPSYLON;
+                l.position = hit.position + hit.normal + F_EPSYLON;
 
-                double distance = magnitude(l.position - r.origin);
-                double factor = 1.0 / fmax(0.0, sqrt(distance));
-                factor = 2.0;
+                float distance = magnitude(l.position - r.origin);
+                float factor = 1.0f / fmax(0.0f, sqrt(distance));
+                factor = 2.0f;
 
                 l.mlt.emission = light->mlt.emission * hit.object->mlt.diffuse;
                 l.mlt.emission = l.mlt.emission * factor;
-                l.mlt.emission = l.mlt.emission * (1.0 / IR_RAY_PER_LIGHT);
+                l.mlt.emission = l.mlt.emission * (1.0f / IR_RAY_PER_LIGHT);
 
                 lights[created] = l;
                 created++;
@@ -268,7 +269,7 @@ namespace RE
         hit_t hit;
 
         if (!intersect_scene(scene, ray, &hit))
-            return vec3_t(0.0, 0.0, 0.0);
+            return vec3_t(0.0f, 0.0f, 0.0f);
 
         if (hit.object->type == object_type_e::AREA_LIGHT)
             return hit.object->mlt.emission;
@@ -279,7 +280,7 @@ namespace RE
             hit_t l_hit;
             ray_t l_ray;
 
-            l_ray.origin = hit.position + hit.normal * D_EPSYLON;
+            l_ray.origin = hit.position + hit.normal * F_EPSYLON;
             l_ray.direction = normalize(lights[i].position - l_ray.origin);
 
             if (!intersect_scene(scene, l_ray, &l_hit))
@@ -290,7 +291,7 @@ namespace RE
             if (magnitude(oh) < magnitude(ol))
                 continue;
 
-            double factor = fmax(0.0, dot(hit.normal, l_ray.direction));
+            float factor = fmax(0.0f, dot(hit.normal, l_ray.direction));
             light = light + lights[i].mlt.emission * factor; 
 
         }

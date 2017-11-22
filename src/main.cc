@@ -81,7 +81,7 @@ int main()
     auto wall_left = create_plane(vec3_t(-5, 0, 0), vec3_t(1, 0, 0), red);
     auto roof = create_plane(vec3_t(0, 5, 0), vec3_t(0, -1, 0), gray);
 
-    auto light = create_area_light(vec3_t(0.0, 4.9, 1.0), light_white, 3.0, 6, 6);
+    auto light = create_area_light(vec3_t(0.0, 4.9, 1.0), light_white, 5.0, 6, 6);
 
     scene.objects.push_back(&sphere_front);
     scene.objects.push_back(&sphere_back);
@@ -103,8 +103,13 @@ int main()
     (void)wall_back;
     (void)light;
 
-#if 0
-    struct RE::area render_area = { 350, 350, 16, 128 };
+#if defined(RENDER_PARTIAL)
+    struct RE::area render_area = {
+        (uint32_t)(WIDTH * 0.5),
+        (uint32_t)(HEIGHT * 0.6),
+        (uint32_t)(WIDTH * 0.2),
+        (uint32_t)(HEIGHT * 0.2)
+    };
     RE::render_scene(&scene, WIDTH, HEIGHT, &render_area);
 #else
     RE::render_scene(&scene, WIDTH, HEIGHT, nullptr);

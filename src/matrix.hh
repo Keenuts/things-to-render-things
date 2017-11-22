@@ -6,7 +6,7 @@ typedef struct mat3 {
     vec3_t lines[3];
 
     mat3();
-    mat3(double v);
+    mat3(float v);
     mat3(vec3_t values[3]);
 
     vec3_t& operator[](int i);

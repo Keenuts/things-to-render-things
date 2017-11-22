@@ -45,6 +45,7 @@ namespace RE
         memset(&state, 0, sizeof(state));
         state.mutex = new std::mutex();
         state.should_close = new bool;
+        *state.should_close = false;
         state.width = info.width;
         state.height = info.height;
         state.output_frame = info.output_frame;
