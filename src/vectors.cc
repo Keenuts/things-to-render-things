@@ -147,6 +147,7 @@ void vec3_t::operator-=(vec3_t v)
 
 vec3_t rotate(vec3_t in, vec3_t angles)
 {
+    angles *= DEG2RAD;
     mat3_t x_rot(0.0f), y_rot(0.0f), z_rot(0.0f);
 
     x_rot[0] = vec3_t(1, 0,          0);
