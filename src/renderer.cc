@@ -4,8 +4,9 @@
 
 #include "defines.hh"
 #include "helpers.hh"
-#include "renderer.hh"
+#include "mapping.hh"
 #include "raytracing.hh"
+#include "renderer.hh"
 
 namespace RE
 {
@@ -16,7 +17,7 @@ namespace RE
         float height = i.height;
         const float FOV = 45.0;
 
-        float L = width / (tan(DEG2RAD(FOV / 2.0)) * 2.0);
+        float L = width / (tan(DEG2RAD * FOV * 0.5) * 2.0);
 
         vec3_t middle = scene->camera_position + scene->camera_direction * L;
         float s_width = lerp(-width, width, x / width) / 2.0;
@@ -34,7 +35,11 @@ namespace RE
 
     static bool intersect_sphere(object_sphere_t *o, ray_t r, hit_t *out)
     {
-        return intersect_sphere(r, o->position, o->radius, out);
+        bool touch = intersect_sphere(r, o->position, o->radius, out);
+        if (touch)
+            out->uv_coord = get_sphere_uv(o->position, out->position);
+        return touch;
+
     }
 
     static bool intersect_plane(object_plane_t *o, ray_t r, hit_t *out)
@@ -48,22 +53,26 @@ namespace RE
         bool touch = false;
         float depth = std::numeric_limits<float>::infinity();
 
+        assert(o->vtx_count > 0 && "An empty mesh is in the rendering system");
         assert(o->vtx_count % 3 == 0 && "Invalid vtx count. Must be multiple of 3");
 
         for (uint64_t i = 0; i < o->vtx_count; i += 3) {
             hit_t local_hit;
 
-            vec3_t a = rotate(o->vtx[i + 0], o->rotation) + o->position;
-            vec3_t b = rotate(o->vtx[i + 1], o->rotation) + o->position;
-            vec3_t c = rotate(o->vtx[i + 2], o->rotation) + o->position;
+            vec3_t vtx[3]  = {
+                rotate(o->vtx[i + 0], o->rotation) + o->position,
+                rotate(o->vtx[i + 1], o->rotation) + o->position,
+                rotate(o->vtx[i + 2], o->rotation) + o->position
+            };
 
-            if (!intersect_tri(r, a, b, c, &local_hit))
+            if (!intersect_tri(r, vtx[0], vtx[1], vtx[2], &local_hit))
                 continue;
 
             touch = true;
             float local_depth = magnitude(local_hit.position - r.origin);
             if (local_depth < depth) {
                 hit = local_hit;
+                hit.uv_coord = get_triangle_uv(vtx, o->uv + i, hit.position);
                 depth = local_depth;
             }
         }
@@ -177,9 +186,9 @@ namespace RE
              }
              light = light + l;
         }
-        return hit.object->mlt.diffuse * light;
+        return get_diffuse_color(scene, hit) * light;
 #else
-        return hit.object->mlt.diffuse;
+        return get_diffuse_color(scene, hit);
 #endif
     }
 
@@ -208,13 +217,20 @@ namespace RE
             ray.direction = get_hemisphere_random(hit.normal);
             ray.origin = hit.position + hit.normal * F_EPSYLON;
 
-            mask *= hit.object->mlt.diffuse;
+            mask *= get_diffuse_color(scene, hit);
             mask *= dot(ray.direction, nl);
             mask *= 2.0f;
         }
 
         return color;
     }
+
+#if 0
+    static uint64_t mdt_light_cast(scene_t *scene, uint64_t r_count, uint64_t depth)
+    {
+        uint64_t created = 0;
+    }
+#endif
 
     light_t* mdt_generate_irradiance_lights(scene_t *scene, uint64_t *count)
     {
@@ -225,7 +241,7 @@ namespace RE
 
         printf("Creating an array of %zu lights\n", lights_count * IR_RAY_PER_LIGHT);
 
-        light_t *lights = new light_t[lights_count * IR_RAY_PER_LIGHT];
+        light_t *lights = new light_t[lights_count * IR_RAY_PER_LIGHT * IR_RAY_DEPTH];
 
         uint64_t created = 0;
         for (object_t *o : scene->objects) {
@@ -247,12 +263,15 @@ namespace RE
                 l.position = hit.position + hit.normal + F_EPSYLON;
 
                 float distance = magnitude(l.position - r.origin);
-                float factor = 1.0f / fmax(0.0f, sqrt(distance));
-                factor = 2.0f;
+                float factor = light->power / distance;
+                //float factor = 1.0f / fmax(0.0f, sqrt(distance));
+                //factor = 2.0f;
 
-                l.mlt.emission = light->mlt.emission * hit.object->mlt.diffuse;
-                l.mlt.emission = l.mlt.emission * factor;
-                l.mlt.emission = l.mlt.emission * (1.0f / IR_RAY_PER_LIGHT);
+                l.mlt.emission = light->mlt.emission
+                               * get_diffuse_color(scene, hit);
+                //l.mlt.emission = l.mlt.emission * factor;
+                //l.mlt.emission = l.mlt.emission * (1.0f / IR_RAY_PER_LIGHT);
+                l.power = factor;
 
                 lights[created] = l;
                 created++;
@@ -296,6 +315,6 @@ namespace RE
 
         }
 
-        return saturate(light) * hit.object->mlt.diffuse;
+        return saturate(light) * get_diffuse_color(scene, hit);
     }
 }

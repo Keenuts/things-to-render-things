@@ -1,7 +1,7 @@
 #pragma once
 
-//#define USE_RAYTRACER
-#define USE_PATHTRACER
+#define USE_RAYTRACER
+//#define USE_PATHTRACER
 //#define USE_MDT
 
 // Enable this to only render a part of the front sphere
@@ -18,8 +18,9 @@
 
 // Raytracer settings
 //#define RT_ENABLE_SHADOWS
-#define RT_SOFT_SHADOW_SAMPLES 64
+#define RT_SOFT_SHADOW_SAMPLES 1
 #define RT_SOFT_SHADOW_RADIUS 0.01
 
 // MDT settings
 #define IR_RAY_PER_LIGHT 16
+#define IR_RAY_DEPTH 2

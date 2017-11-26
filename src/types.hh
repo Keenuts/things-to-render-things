@@ -10,6 +10,8 @@ namespace RE
     typedef struct material {
         vec3_t emission;
         vec3_t diffuse;
+        bool has_texture;
+        uint32_t texture_id;
     } material_t;
 
     typedef enum object_type {
@@ -25,6 +27,7 @@ namespace RE
     } object_t;
 
     typedef struct light : public object_t {
+        float power;
     } light_t;
 
     // Objects
@@ -35,6 +38,7 @@ namespace RE
 
     typedef struct object_mesh : public object_t {
         vec3_t *vtx;
+        vec3_t *uv;
         uint64_t vtx_count;
     } object_mesh_t;
 
@@ -51,7 +55,6 @@ namespace RE
     typedef struct area_light : public light_t {
         vec3_t size;
         vec3_t normal;
-        float power;
     } area_light_t;
 
     // Scene

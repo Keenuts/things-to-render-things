@@ -14,6 +14,7 @@ namespace RE
     typedef struct intersection {
         vec3_t position;
         vec3_t normal;
+        vec3_t uv_coord;
         RE::object_t *object;
     } hit_t;
 

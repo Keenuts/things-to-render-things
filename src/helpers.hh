@@ -1,9 +1,11 @@
 #pragma once
 
+#include <math.h>
+
 #define D_EPSYLON 0.00001
 #define F_EPSYLON 0.001f
 #define PI 3.14159265358979323846
-#define DEG2RAD(x) ((x) * ((PI * 2.0) / 360.0))
+#define DEG2RAD ((M_PI * 2.f) / 360.f)
 
 template<typename T>
 T lerp(T a, T b, float w)
