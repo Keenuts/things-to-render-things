@@ -19,7 +19,7 @@ namespace RE
     {
         ray_t r = get_ray_from_camera(i, x, y);
 #if defined(USE_MDT)
-        return mdt(i.scene, r, i.scene->mdt_lights, i.scene->mdt_light_count);
+        return mdt(i.scene, r);
 #elif defined(USE_RAYTRACER)
         return raytrace(i.scene, r, 0);
 #elif defined(USE_PATHTRACER)
@@ -78,7 +78,7 @@ namespace RE
         viewer_state = initialize_viewport(info);
 
 #if defined(USE_MDT)
-        scene->mdt_lights = mdt_generate_irradiance_lights(scene, &scene->mdt_light_count);
+        mdt_generate_irradiance_lights(scene);
 #endif
 
         std::queue<struct job> jobs;

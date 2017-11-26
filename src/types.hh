@@ -66,8 +66,7 @@ namespace RE
         std::vector<object_t*> objects;
         std::vector<light_t*> lights;
 
-        light_t *mdt_lights;
-        uint64_t mdt_light_count;
+        std::vector<light_t> mdt_lights;
     } scene_t;
 
     struct area {

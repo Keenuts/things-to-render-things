@@ -13,6 +13,6 @@ namespace RE
     vec3_t pathtrace(scene_t *scene, ray_t ray, uint32_t bounce);
     vec3_t raytrace(scene_t *scene, ray_t ray, uint32_t bounce);
 
-    light_t* mdt_generate_irradiance_lights(scene_t *scene, uint64_t *count);
-    vec3_t mdt(scene_t *scene, ray_t ray, light_t *lights, uint64_t l_count);
+    void mdt_generate_irradiance_lights(scene_t *scene);
+    vec3_t mdt(scene_t *scene, ray_t ray);
 }

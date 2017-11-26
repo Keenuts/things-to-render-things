@@ -225,65 +225,56 @@ namespace RE
         return color;
     }
 
-#if 0
-    static uint64_t mdt_light_cast(scene_t *scene, uint64_t r_count, uint64_t depth)
+    static void mdt_light_cast(scene_t *scene, light_t *l, uint64_t depth)
     {
-        uint64_t created = 0;
+        for (uint64_t i = 0; i < IR_RAY_PER_LIGHT; i++) {
+            ray_t r;
+            hit_t hit;
+
+            if (l->type == object_type_e::AREA_LIGHT) {
+                area_light_t *al = static_cast<area_light_t*>(l);
+
+                r.origin = al->position + al->normal * F_EPSYLON;
+                r.direction = get_hemisphere_random(al->normal);
+            }
+            else {
+                r.origin - l->position;
+                r.direction = get_sphere_random();
+            }
+
+            if (!intersect_scene(scene, r, &hit)) {
+                continue;
+            }
+
+            if (hit.object->type == object_type_e::AREA_LIGHT) {
+                continue;
+            }
+
+            light_t new_light;
+            float dist_to_light = magnitude(hit.position - r.origin);
+
+            new_light.position = hit.position + hit.normal * 2.f * F_EPSYLON;
+            new_light.mlt.emission = l->mlt.emission * get_diffuse_color(scene, hit);
+            new_light.power = l->power / (dist_to_light * dist_to_light);
+
+            scene->mdt_lights.push_back(new_light);
+
+            if (depth < IR_RAY_DEPTH)
+                mdt_light_cast(scene, &scene->mdt_lights[scene->mdt_lights.size() - 1], depth + 1);
+        }
     }
-#endif
 
-    light_t* mdt_generate_irradiance_lights(scene_t *scene, uint64_t *count)
+    void mdt_generate_irradiance_lights(scene_t *scene)
     {
-        uint64_t lights_count = 0;
-        for (object_t *o : scene->objects)
-            if (o->type == object_type_e::AREA_LIGHT)
-                lights_count += 1;
-
-        printf("Creating an array of %zu lights\n", lights_count * IR_RAY_PER_LIGHT);
-
-        light_t *lights = new light_t[lights_count * IR_RAY_PER_LIGHT * IR_RAY_DEPTH];
-
-        uint64_t created = 0;
         for (object_t *o : scene->objects) {
             if (o->type != object_type_e::AREA_LIGHT)
                 continue;
-
-            area_light_t *light = static_cast<area_light_t*>(o);
-
-            for (uint64_t i = 0; i < IR_RAY_PER_LIGHT; i++) {
-                ray_t r;
-                r.direction = get_hemisphere_random(light->normal);
-                r.origin = o->position + r.direction * 0.1;
-
-                hit_t hit;
-                if (!intersect_scene(scene, r, &hit))
-                    continue;
-
-                light_t l;
-                l.position = hit.position + hit.normal + F_EPSYLON;
-
-                float distance = magnitude(l.position - r.origin);
-                float factor = light->power / distance;
-                //float factor = 1.0f / fmax(0.0f, sqrt(distance));
-                //factor = 2.0f;
-
-                l.mlt.emission = light->mlt.emission
-                               * get_diffuse_color(scene, hit);
-                //l.mlt.emission = l.mlt.emission * factor;
-                //l.mlt.emission = l.mlt.emission * (1.0f / IR_RAY_PER_LIGHT);
-                l.power = factor;
-
-                lights[created] = l;
-                created++;
-            }
+            mdt_light_cast(scene, static_cast<light_t*>(o), 1);
         }
-
-        printf("Created %zu lights\n", created);
-        *count = created;
-        return lights;
+        printf("Created %zu lights\n", scene->mdt_lights.size());
     }
 
-    vec3_t mdt(scene_t *scene, ray_t ray, light_t *lights, uint64_t l_count)
+    vec3_t mdt(scene_t *scene, ray_t ray)
     {
         hit_t hit;
 
@@ -293,26 +284,27 @@ namespace RE
         if (hit.object->type == object_type_e::AREA_LIGHT)
             return hit.object->mlt.emission;
 
-        vec3_t light = vec3_t(0, 0, 0);
+        vec3_t light = BLACK;
+        uint64_t l_count = scene->mdt_lights.size();
 
-        for (uint32_t i = 0; i < l_count; i++) {
+        for (uint64_t i = 0; i < l_count; i++) {
             hit_t l_hit;
             ray_t l_ray;
 
             l_ray.origin = hit.position + hit.normal * F_EPSYLON;
-            l_ray.direction = normalize(lights[i].position - l_ray.origin);
+            l_ray.direction = normalize(scene->mdt_lights[i].position - l_ray.origin);
 
             if (!intersect_scene(scene, l_ray, &l_hit))
                 continue;
 
             vec3_t oh = l_hit.position - l_ray.origin;
-            vec3_t ol = lights[i].position - l_ray.origin;
-            if (magnitude(oh) < magnitude(ol))
+            vec3_t ol = scene->mdt_lights[i].position - l_ray.origin;
+            float dist_to_light = magnitude(ol);
+            if (magnitude(oh) < dist_to_light) // No direct sight
                 continue;
 
-            float factor = fmax(0.0f, dot(hit.normal, l_ray.direction));
-            light = light + lights[i].mlt.emission * factor; 
-
+            float factor = 1.f / l_count;
+            light += scene->mdt_lights[i].mlt.emission * factor;
         }
 
         return saturate(light) * get_diffuse_color(scene, hit);

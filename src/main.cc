@@ -41,6 +41,7 @@ static RE::area_light_t create_area_light(vec3_t pos, RE::material_t mlt,
     RE::area_light_t l;
     l.type = RE::object_type_e::AREA_LIGHT;
     l.position = pos;
+    l.normal = -VECTOR_UP;
     l.mlt = mlt;
     l.size = vec3_t(width, 0.0f, length);
     l.power = power;
