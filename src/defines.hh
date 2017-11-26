@@ -2,7 +2,8 @@
 
 //#define USE_RAYTRACER
 //#define USE_PATHTRACER
-#define USE_MDT
+#define USE_BIDIR_PATHTRACER
+//#define USE_MDT
 
 // Enable this to only render a part of the front sphere
 //#define RENDER_PARTIAL
@@ -22,5 +23,11 @@
 #define RT_SOFT_SHADOW_RADIUS 0.01
 
 // MDT settings
-#define IR_RAY_PER_LIGHT 512
+#define IR_RAY_PER_LIGHT 32
 #define IR_RAY_DEPTH 1
+
+// Bidirectionnal pathracing 
+#define BDPT_MAX_CRAY_DEPTH 3
+#define BDPT_MAX_LRAY_DEPTH 2
+#define BDPT_SAMPLES 128
+#define BDPT_RAY_PER_LIGHT 32

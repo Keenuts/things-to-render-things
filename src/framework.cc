@@ -26,7 +26,14 @@ namespace RE
         {
             vec3_t out = BLACK;
             for (uint32_t s = 0; s < PT_SAMPLES; s++)
-                out = out + pathtrace(i.scene, r, 0) * (1.0f / PT_SAMPLES);
+                out = out + pathtrace(i.scene, r) * (1.0f / PT_SAMPLES);
+            return saturate(out);
+        }
+#elif defined(USE_BIDIR_PATHTRACER)
+        {
+            vec3_t out = BLACK;
+            for (uint32_t s = 0; s < BDPT_SAMPLES; s++)
+                out = out + bidir_pathtrace(i.scene, r) * (1.0f / BDPT_SAMPLES);
             return saturate(out);
         }
 #else
@@ -77,7 +84,7 @@ namespace RE
 
         viewer_state = initialize_viewport(info);
 
-#if defined(USE_MDT)
+#if defined(USE_MDT) or defined(USE_BIDIR_PATHTRACER)
         mdt_generate_irradiance_lights(scene);
 #endif
 

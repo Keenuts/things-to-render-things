@@ -192,7 +192,7 @@ namespace RE
 #endif
     }
 
-    vec3_t pathtrace(scene_t *scene, ray_t ray, uint32_t bounce)
+    vec3_t pathtrace(scene_t *scene, ray_t ray)
     {
         vec3_t mask = WHITE;
         vec3_t color = BLACK;
@@ -308,5 +308,65 @@ namespace RE
         }
 
         return saturate(light) * get_diffuse_color(scene, hit);
+    }
+
+    vec3_t bidir_pathtrace(scene_t *scene, ray_t ray)
+    {
+        vec3_t mask = WHITE;
+        vec3_t color = BLACK;
+
+        for (uint32_t i = 0; i < BDPT_MAX_CRAY_DEPTH; i++) {
+            hit_t hit;
+
+            if (!intersect_scene(scene, ray, &hit)) {
+                color = BLACK;
+                break;
+            }
+
+            if (hit.object->type == object_type_e::AREA_LIGHT) {
+                area_light_t *l = static_cast<area_light_t*>(hit.object);
+                color += mask * l->mlt.emission * l->power;
+                break;
+            }
+
+            vec3_t nl = hit.normal;
+            nl *= dot(hit.normal, ray.direction) < 0 ? 1.0f : -1.0f;
+
+            ray.direction = get_hemisphere_random(hit.normal);
+            ray.origin = hit.position + hit.normal * F_EPSYLON;
+
+            mask *= get_diffuse_color(scene, hit);
+            mask *= dot(ray.direction, nl);
+            mask *= 2.0f;
+
+            // If out of bounce, let's try to close the path
+            if (i + 1 < BDPT_MAX_CRAY_DEPTH)
+                continue;
+
+            vec3_t light = BLACK;
+            for (light_t l : scene->mdt_lights) {
+                hit_t l_hit;
+                ray_t l_ray;
+
+                l_ray.origin = hit.position + hit.normal * F_EPSYLON;
+                l_ray.direction = normalize(l.position - l_ray.origin);
+
+                if (!intersect_scene(scene, l_ray, &l_hit))
+                    continue;
+
+                vec3_t oh = l_hit.position - l_ray.origin;
+                vec3_t ol = l.position - l_ray.origin;
+                float dist_to_light = magnitude(ol);
+                if (magnitude(oh) < dist_to_light) // No direct sight
+                    continue;
+
+                float factor = 1.f / scene->mdt_lights.size();
+                light += l.mlt.emission * factor;
+            }
+
+            color += mask * light;
+        }
+
+        return color;
     }
 }
