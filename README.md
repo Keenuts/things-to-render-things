@@ -33,4 +33,3 @@ Simple raytracing
 Raytracing simulating GI using sub-lights
 
 ![raytracer indirect](https://raw.githubusercontent.com/Keenuts/things-to-render-things/master/showcase/raytracer-manylights.png "Raytracer output with somekind of indirect lighting")
-
